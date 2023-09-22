@@ -1,0 +1,19 @@
+
+# CLI tool, only in development environment.
+# https://goframe.org/pages/viewpage.action?pageId=3673173
+gfcli:
+  docker:
+    build: "-a amd64 -s linux -p temp -ew"
+    tagPrefixes:
+      - zze326/
+  gen:
+    dao:
+      - link: "mysql:zze:devops.zze@tcp(192.168.2.231:3306)/zze_admin_go?loc=Local&parseTime=true"
+        group: default
+        tables: "user, permission, role, dept"
+        withTime: false
+        gJsonSupport: true
+        overwriteDao: true
+        descriptionTag: true
+#        jsonCase: Snake
+        clear: true

@@ -1,0 +1,28 @@
+server:
+  address: ":8000"
+  openapiPath: "/api.json"
+  swaggerPath: "/swagger"
+  accessLogEnabled: true
+  serverRoot: /Users/zze/Work/code/github/zze-admin-go/resource/dist
+  indexFiles: [ "index.html", "main.html" ]
+
+
+logger:
+  level: "all"
+  stdout: true
+
+database:
+  logger:
+    level: "all"
+    stdout: "true"
+  default:
+    type: mysql
+    link: "mysql:zze:zze.admin@tcp(127.0.0.1:3306)/zze_admin_go?loc=Local&parseTime=true"
+    charset: utf8mb4
+    maxIdle: "10"
+    maxOpen: "300"
+    debug: true
+
+jwt:
+  secret: vIIEngfamGZasdkseadgF9fe
+  expire: 8h
