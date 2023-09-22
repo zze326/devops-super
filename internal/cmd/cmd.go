@@ -3,6 +3,8 @@ package cmd
 import (
 	"context"
 	"devops-super/internal/controller/dept"
+	"devops-super/internal/controller/host"
+	"devops-super/internal/controller/host_group"
 	"devops-super/internal/controller/permission"
 	"devops-super/internal/controller/public"
 	"devops-super/internal/controller/role"
@@ -32,10 +34,14 @@ var (
 				group.Group("/", func(group *ghttp.RouterGroup) {
 					group.Middleware(service.Middleware().Auth)
 					group.Bind(
-						user.NewV1(),
-						permission.NewV1(),
-						role.NewV1(),
-						dept.NewV1(),
+						// 系统管理
+						user.NewV1(),       // 用户
+						permission.NewV1(), // 权限
+						role.NewV1(),       // 角色
+						dept.NewV1(),       // 部门
+						// 资源管理
+						host_group.NewV1(), // 主机组
+						host.NewV1(),       // 主机
 					)
 				})
 			})

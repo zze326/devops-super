@@ -1,4 +1,4 @@
-package dept
+package host
 
 import (
 	"context"
@@ -6,14 +6,15 @@ import (
 	"devops-super/internal/service"
 	"github.com/gogf/gf/v2/util/gconv"
 
-	"devops-super/api/dept/v1"
+	"devops-super/api/host/v1"
 )
 
 func (c *ControllerV1) Add(ctx context.Context, req *v1.AddReq) (res *v1.AddRes, err error) {
-	in := new(entity.Dept)
+	in := new(entity.Host)
 	if err = gconv.Struct(req, in); err != nil {
 		return
 	}
-	err = service.Dept().Add(ctx, in)
+
+	err = service.Host().Add(ctx, in)
 	return
 }

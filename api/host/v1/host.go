@@ -1,0 +1,39 @@
+package v1
+
+import (
+	"devops-super/api"
+	"devops-super/internal/model/entity"
+	"devops-super/internal/model/mid"
+	"github.com/gogf/gf/v2/frame/g"
+)
+
+type GetPageLstReq struct {
+	g.Meta `method:"get" path:"/host/page-list" summary:"分页获取主机列表" tags:"主机"`
+	*api.PageLstReq
+}
+
+type GetPageLstRes struct {
+	*api.PageLstRes[*entity.Host]
+}
+
+type AddReq struct {
+	g.Meta `method:"post" path:"/host" summary:"添加主机" tags:"主机"`
+	*mid.Host
+}
+
+type AddRes struct{}
+
+type UptReq struct {
+	g.Meta `method:"put" path:"/host/{id}" summary:"更新主机" tags:"主机"`
+	Id     int ` v:"min:1#id必须" path:"id"`
+	*mid.Host
+}
+
+type UptRes struct{}
+
+type DelReq struct {
+	g.Meta `method:"delete" path:"/host/{id}" summary:"删除主机" tags:"主机"`
+	Id     int ` v:"min:1#id必须" path:"id"`
+}
+
+type DelRes struct{}
