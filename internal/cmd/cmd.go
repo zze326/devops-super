@@ -5,6 +5,7 @@ import (
 	"devops-super/internal/controller/dept"
 	"devops-super/internal/controller/host"
 	"devops-super/internal/controller/host_group"
+	"devops-super/internal/controller/host_terminal_session"
 	"devops-super/internal/controller/permission"
 	"devops-super/internal/controller/public"
 	"devops-super/internal/controller/role"
@@ -40,8 +41,9 @@ var (
 						role.NewV1(),       // 角色
 						dept.NewV1(),       // 部门
 						// 资源管理
-						host_group.NewV1(), // 主机组
-						host.NewV1(),       // 主机
+						host_group.NewV1(),            // 主机组
+						host.NewV1(),                  // 主机
+						host_terminal_session.NewV1(), // 主机会话
 					)
 				})
 			})

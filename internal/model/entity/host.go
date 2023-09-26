@@ -10,7 +10,7 @@ import (
 
 // Host is the golang structure for table host.
 type Host struct {
-	Id          int64       `json:"id"          description:""`         //
+	Id          int         `json:"id"          description:""`         //
 	Name        string      `json:"name"        description:"名称"`       // 名称
 	HostAddr    string      `json:"hostAddr"    description:"主机名或IP"`   // 主机名或IP
 	Port        int64       `json:"port"        description:"端口"`       // 端口

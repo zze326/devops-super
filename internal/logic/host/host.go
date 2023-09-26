@@ -1,32 +1,24 @@
 package user
 
 import (
-	"bytes"
 	"context"
 	"devops-super/api"
 	"devops-super/internal/dao"
 	"devops-super/internal/model/do"
 	"devops-super/internal/model/entity"
+	"devops-super/internal/model/mid"
 	"devops-super/internal/service"
+	"fmt"
 	"github.com/gogf/gf/v2/errors/gerror"
-	"github.com/gogf/gf/v2/net/ghttp"
-	"github.com/gogf/gf/v2/os/gtime"
+	"github.com/gogf/gf/v2/frame/g"
+	"github.com/gogf/gf/v2/os/glog"
 	"github.com/gogf/gf/v2/util/gutil"
-	"golang.org/x/crypto/ssh"
+	"os"
+	"path/filepath"
+	"time"
 )
 
-type sHost struct {
-	session       *ssh.Session
-	startTime     *gtime.Time
-	lastReadTime  *gtime.Time
-	request       *ghttp.Request
-	ws            *ghttp.WebSocket
-	writeBuffer   bytes.Buffer
-	readBuffer    bytes.Buffer
-	hasInput      bool
-	isSaveSession bool
-	ctx           context.Context
-}
+type sHost struct{}
 
 var cols = dao.Host.Columns()
 
@@ -88,4 +80,58 @@ func (*sHost) Get(ctx context.Context, in *do.Host) (out *entity.Host, err error
 func (*sHost) Del(ctx context.Context, in *do.Host) (err error) {
 	_, err = dao.Host.Ctx(ctx).Where(in).OmitNilWhere().Delete()
 	return
+}
+
+func (s *sHost) TestSSH(ctx context.Context, id int) (err error) {
+	eHost, err := s.Get(ctx, &do.Host{Id: id})
+	if err != nil {
+		return err
+	}
+
+	client, err := s.SshClient(eHost)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if err := client.Close(); err != nil {
+			glog.Error(ctx, err)
+		}
+	}()
+	return nil
+}
+
+func (s *sHost) DownloadFile(ctx context.Context, in *mid.DownloadFileIn) error {
+	eHost, err := s.Get(ctx, &do.Host{Id: in.Id})
+	if err != nil {
+		return err
+	}
+	client, err := s.SftpClient(eHost)
+	if err != nil {
+		return err
+	}
+
+	file, err := client.OpenFile(in.Path, os.O_RDONLY)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if err := file.Close(); err != nil {
+			glog.Error(ctx, err)
+		}
+	}()
+
+	//var length int64 = -1
+	//if size, err := file.Seek(0, 2); err == nil {
+	//	if _, err = file.Seek(0, 0); err == nil {
+	//		length = size
+	//	}
+	//}
+
+	res := g.RequestFromCtx(ctx).Response
+	res.Header().Add("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filepath.Base(in.Path)))
+	res.ServeContent(filepath.Base(in.Path), time.Now(), file)
+
+	return nil
 }

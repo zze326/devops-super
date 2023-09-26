@@ -8,6 +8,8 @@ import (
 	"encoding/json"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/os/glog"
+	"github.com/gogf/gf/v2/os/gtime"
+	"github.com/pkg/sftp"
 	"math"
 	"os"
 	"path"
@@ -15,9 +17,13 @@ import (
 )
 
 func (s *sHost) WsSftpFileManager(ctx context.Context, in *entity.Host) (err error) {
-	s.ctx = ctx
-	s.request = g.RequestFromCtx(ctx)
-	if s.ws, err = s.request.WebSocket(); err != nil {
+	wsCtx := &wsContext{
+		ctx:          ctx,
+		request:      g.RequestFromCtx(ctx),
+		lastPingTime: gtime.Now(),
+		lastReadTime: gtime.Now(),
+	}
+	if wsCtx.ws, err = wsCtx.request.WebSocket(); err != nil {
 		return err
 	}
 
@@ -60,15 +66,18 @@ func (s *sHost) WsSftpFileManager(ctx context.Context, in *entity.Host) (err err
 		AbsPath string `json:"abs_path"`
 		IsDir   bool   `json:"is_dir"`
 	}
+
+	go wsCtx.checkTimeout()
 	var msgBytesBuffer bytes.Buffer
 	for {
 		// 接受字节
 		//var msgBytes []byte
-		_, msgBytes, err := s.ws.ReadMessage()
+		_, msgBytes, err := wsCtx.ws.ReadMessage()
 		if err != nil {
 			glog.Errorf(ctx, "websocket message receive error: %s", err.Error())
 			break
 		}
+		wsCtx.lastReadTime = gtime.Now()
 
 		msg := new(fileOperate)
 		if msgBytes[0] != '{' {
@@ -97,8 +106,10 @@ func (s *sHost) WsSftpFileManager(ctx context.Context, in *entity.Host) (err err
 		if msg.Type == "exit" {
 			break
 		}
-
 		switch msg.Type {
+		// 心跳
+		case "ping":
+			wsCtx.lastPingTime = gtime.Now()
 		// 列出目录下的文件
 		case "list":
 			files, err := sftpClient.ReadDir(msg.Path)
@@ -121,7 +132,7 @@ func (s *sHost) WsSftpFileManager(ctx context.Context, in *entity.Host) (err err
 				})
 			}
 
-			if err := s.ws.WriteJSON(&wsResp{
+			if err := wsCtx.ws.WriteJSON(&wsResp{
 				Type: "listData",
 				Data: fileinfos,
 				Path: msg.Path,
@@ -133,7 +144,7 @@ func (s *sHost) WsSftpFileManager(ctx context.Context, in *entity.Host) (err err
 		case "uploadFileChunk":
 			file, err := sftpClient.OpenFile(path.Join(msg.Path, msg.Filename), os.O_CREATE|os.O_WRONLY)
 			if err != nil {
-				if err2 := s.ws.WriteJSON(&wsResp{
+				if err2 := wsCtx.ws.WriteJSON(&wsResp{
 					Type:    "uploadFileChunk",
 					Success: false,
 					Msg:     err.Error(),
@@ -152,7 +163,7 @@ func (s *sHost) WsSftpFileManager(ctx context.Context, in *entity.Host) (err err
 			}
 
 			if msg.ChunkEnd >= msg.TotalSize {
-				if err := s.ws.WriteJSON(&wsResp{
+				if err := wsCtx.ws.WriteJSON(&wsResp{
 					Type:    "uploadFileChunk",
 					Success: true,
 					Path:    msg.Path,
@@ -162,7 +173,7 @@ func (s *sHost) WsSftpFileManager(ctx context.Context, in *entity.Host) (err err
 				}
 			} else {
 				glog.Infof(ctx, "正在上传文件: %s 到 %s, 进度: %.0f%%, 偏移量: %d", msg.Filename, msg.Path, math.Round(float64(msg.ChunkEnd)/float64(msg.TotalSize)*100), msg.ChunkEnd)
-				if err := s.ws.WriteJSON(&wsResp{
+				if err := wsCtx.ws.WriteJSON(&wsResp{
 					Type:      "uploadingFileChunk",
 					Success:   true,
 					ChunkEnd:  msg.ChunkEnd,
@@ -176,7 +187,7 @@ func (s *sHost) WsSftpFileManager(ctx context.Context, in *entity.Host) (err err
 		// 删除文件
 		case "delete":
 			if err := sftpClient.Remove(msg.Path); err != nil {
-				if err2 := s.ws.WriteJSON(&wsResp{
+				if err2 := wsCtx.ws.WriteJSON(&wsResp{
 					Type:    "delete",
 					Success: false,
 					Msg:     err.Error(),
@@ -187,7 +198,7 @@ func (s *sHost) WsSftpFileManager(ctx context.Context, in *entity.Host) (err err
 				glog.Errorf(ctx, "删除文件失败：", err)
 				continue
 			}
-			if err2 := s.ws.WriteJSON(&wsResp{
+			if err2 := wsCtx.ws.WriteJSON(&wsResp{
 				Type:    "delete",
 				Success: true,
 			}); err2 != nil {
@@ -195,8 +206,20 @@ func (s *sHost) WsSftpFileManager(ctx context.Context, in *entity.Host) (err err
 				break
 			}
 		}
-
 	}
 	glog.Infof(ctx, "断开 SFTP 文件管理器 Websocket 连接")
 	return nil
+}
+
+func (s *sHost) SftpClient(in *entity.Host) (*sftp.Client, error) {
+	client, err := s.SshClient(in)
+	if err != nil {
+		return nil, err
+	}
+	// 创建 SFTP 客户端
+	sftpClient, err := sftp.NewClient(client)
+	if err != nil {
+		return nil, err
+	}
+	return sftpClient, nil
 }

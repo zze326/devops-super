@@ -9,6 +9,7 @@ import (
 	_ "devops-super/internal/logic/dept"
 	_ "devops-super/internal/logic/host"
 	_ "devops-super/internal/logic/host_group"
+	_ "devops-super/internal/logic/host_terminal_session"
 	_ "devops-super/internal/logic/middleware"
 	_ "devops-super/internal/logic/permission"
 	_ "devops-super/internal/logic/role"

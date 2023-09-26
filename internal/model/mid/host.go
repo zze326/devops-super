@@ -12,3 +12,8 @@ type Host struct {
 	SaveSession bool   `v:"required" json:"saveSession"`
 	HostGroupId int    `v:"required" json:"hostGroupId"`
 }
+
+type DownloadFileIn struct {
+	Id   int
+	Path string
+}

@@ -26,3 +26,7 @@ database:
 jwt:
   secret: vIIEngfamGZasdkseadgF9fe
   expire: 8h
+
+host:
+  terminal:
+    sessionFileDir: host-sessions

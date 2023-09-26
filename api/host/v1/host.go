@@ -8,7 +8,7 @@ import (
 )
 
 type GetReq struct {
-	g.Meta `method:"get" path:"/host/:id" summary:"获取主机" tags:"主机"`
+	g.Meta `method:"get" path:"/host/{id}" summary:"获取主机" tags:"主机"`
 	Id     int `v:"required" path:"id"`
 }
 
@@ -47,16 +47,17 @@ type DelReq struct {
 
 type DelRes struct{}
 
-type WsTerminalReq struct {
-	g.Meta `method:"get" path:"/host/terminal" summary:"连接终端" tags:"主机"`
-	Id     int `v:"required" p:"id"`
+type TestSshReq struct {
+	g.Meta `method:"get" path:"/host/{id}/ssh-ok" summary:"测试主机是否可以成功建立 ssh 连接" tags:"主机"`
+	Id     int `v:"min:1#id必须" path:"id"`
 }
 
-type WsTerminalRes struct{}
+type TestSshRes struct{}
 
-type WsSftpFileManagerReq struct {
-	g.Meta `method:"get" path:"/host/sftp-file-manager" summary:"连接 SFTP 文件管理器" tags:"主机"`
-	Id     int `v:"required" p:"id"`
+type DownloadFileReq struct {
+	g.Meta `method:"get" path:"/host/{id}/download-file" summary:"下载文件" tags:"主机"`
+	Id     int    `v:"required" path:"id"`
+	Path   string `v:"required" p:"path"`
 }
 
-type WsSftpFileManagerRes struct{}
+type DownloadFileRes struct{}
