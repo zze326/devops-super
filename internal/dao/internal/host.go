@@ -22,7 +22,7 @@ type HostDao struct {
 type HostColumns struct {
 	Id          string //
 	Name        string // 名称
-	Host        string // 主机名或IP
+	HostAddr    string // 主机名或IP
 	Port        string // 端口
 	Username    string // 用户名
 	Password    string // 密码
@@ -31,13 +31,14 @@ type HostColumns struct {
 	Desc        string // 描述
 	SaveSession string // 是否保存会话
 	UpdatedAt   string // 更新时间
+	HostGroupId string // 主机组 id
 }
 
 // hostColumns holds the columns for table host.
 var hostColumns = HostColumns{
 	Id:          "id",
 	Name:        "name",
-	Host:        "host",
+	HostAddr:    "host_addr",
 	Port:        "port",
 	Username:    "username",
 	Password:    "password",
@@ -46,6 +47,7 @@ var hostColumns = HostColumns{
 	Desc:        "desc",
 	SaveSession: "save_session",
 	UpdatedAt:   "updated_at",
+	HostGroupId: "host_group_id",
 }
 
 // NewHostDao creates and returns a new DAO object for table data access.

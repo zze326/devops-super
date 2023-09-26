@@ -7,6 +7,15 @@ import (
 	"github.com/gogf/gf/v2/frame/g"
 )
 
+type GetReq struct {
+	g.Meta `method:"get" path:"/host/:id" summary:"获取主机" tags:"主机"`
+	Id     int `v:"required" path:"id"`
+}
+
+type GetRes struct {
+	*entity.Host
+}
+
 type GetPageLstReq struct {
 	g.Meta `method:"get" path:"/host/page-list" summary:"分页获取主机列表" tags:"主机"`
 	*api.PageLstReq
@@ -25,7 +34,7 @@ type AddRes struct{}
 
 type UptReq struct {
 	g.Meta `method:"put" path:"/host/{id}" summary:"更新主机" tags:"主机"`
-	Id     int ` v:"min:1#id必须" path:"id"`
+	Id     int `v:"min:1#id必须" path:"id"`
 	*mid.Host
 }
 
@@ -33,7 +42,21 @@ type UptRes struct{}
 
 type DelReq struct {
 	g.Meta `method:"delete" path:"/host/{id}" summary:"删除主机" tags:"主机"`
-	Id     int ` v:"min:1#id必须" path:"id"`
+	Id     int `v:"min:1#id必须" path:"id"`
 }
 
 type DelRes struct{}
+
+type WsTerminalReq struct {
+	g.Meta `method:"get" path:"/host/terminal" summary:"连接终端" tags:"主机"`
+	Id     int `v:"required" p:"id"`
+}
+
+type WsTerminalRes struct{}
+
+type WsSftpFileManagerReq struct {
+	g.Meta `method:"get" path:"/host/sftp-file-manager" summary:"连接 SFTP 文件管理器" tags:"主机"`
+	Id     int `v:"required" p:"id"`
+}
+
+type WsSftpFileManagerRes struct{}

@@ -14,7 +14,7 @@ type Host struct {
 	g.Meta      `orm:"table:host, do:true"`
 	Id          interface{} //
 	Name        interface{} // 名称
-	Host        interface{} // 主机名或IP
+	HostAddr    interface{} // 主机名或IP
 	Port        interface{} // 端口
 	Username    interface{} // 用户名
 	Password    interface{} // 密码
@@ -23,4 +23,5 @@ type Host struct {
 	Desc        interface{} // 描述
 	SaveSession interface{} // 是否保存会话
 	UpdatedAt   *gtime.Time // 更新时间
+	HostGroupId interface{} // 主机组 id
 }

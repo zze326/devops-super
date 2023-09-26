@@ -1,6 +1,7 @@
 package user
 
 import (
+	"bytes"
 	"context"
 	"devops-super/api"
 	"devops-super/internal/dao"
@@ -8,10 +9,24 @@ import (
 	"devops-super/internal/model/entity"
 	"devops-super/internal/service"
 	"github.com/gogf/gf/v2/errors/gerror"
+	"github.com/gogf/gf/v2/net/ghttp"
+	"github.com/gogf/gf/v2/os/gtime"
 	"github.com/gogf/gf/v2/util/gutil"
+	"golang.org/x/crypto/ssh"
 )
 
-type sHost struct{}
+type sHost struct {
+	session       *ssh.Session
+	startTime     *gtime.Time
+	lastReadTime  *gtime.Time
+	request       *ghttp.Request
+	ws            *ghttp.WebSocket
+	writeBuffer   bytes.Buffer
+	readBuffer    bytes.Buffer
+	hasInput      bool
+	isSaveSession bool
+	ctx           context.Context
+}
 
 var cols = dao.Host.Columns()
 
@@ -53,10 +68,14 @@ func (*sHost) GetPageLst(ctx context.Context, in *api.PageLstReq) (out *api.Page
 	out = &api.PageLstRes[*entity.Host]{}
 	m := dao.Host.Ctx(ctx).Safe(true)
 	if !gutil.IsEmpty(in.Search) {
-		m = m.WhereOr(m.Builder().WhereOrLike(cols.Name, in.SearchStr()).WhereOrLike(cols.Host, in.SearchStr()))
+		m = m.WhereOr(m.Builder().WhereOrLike(cols.Name, in.SearchStr()).WhereOrLike(cols.HostAddr, in.SearchStr()))
 	}
 
-	err = m.Offset(in.Offset()).Limit(in.Limit()).
+	if hostGroupId := in.Wheres.Get("hostGroupId"); !hostGroupId.IsNil() {
+		m = m.Where(cols.HostGroupId, hostGroupId.Int())
+	}
+
+	err = m.Offset(in.Offset()).OrderDesc(cols.Id).Limit(in.Limit()).
 		ScanAndCount(&out.List, &out.Total, false)
 	return
 }
