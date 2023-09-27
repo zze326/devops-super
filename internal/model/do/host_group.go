@@ -5,6 +5,7 @@
 package do
 
 import (
+	"github.com/gogf/gf/v2/encoding/gjson"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/os/gtime"
 )
@@ -17,4 +18,6 @@ type HostGroup struct {
 	Rank      interface{} // 排序
 	ParentId  interface{} // 上级主机组 id
 	UpdatedAt *gtime.Time // 更新时间
+	RoleIds   *gjson.Json // 可访问的角色 id 列表
+	UserIds   *gjson.Json // 可访问的用户 id 列表
 }

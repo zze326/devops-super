@@ -12,6 +12,7 @@ import (
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/os/glog"
+	"github.com/gogf/gf/v2/util/gconv"
 	"github.com/gogf/gf/v2/util/gutil"
 	"os"
 	"path/filepath"
@@ -56,6 +57,10 @@ func (*sHost) Upt(ctx context.Context, in *do.Host) (err error) {
 	return
 }
 
+func (*sHost) GetCountByHostGroupId(ctx context.Context, hostGroupId int) (int, error) {
+	return dao.Host.Ctx(ctx).Where(cols.HostGroupId, hostGroupId).Count()
+}
+
 func (*sHost) GetPageLst(ctx context.Context, in *api.PageLstReq) (out *api.PageLstRes[*entity.Host], err error) {
 	out = &api.PageLstRes[*entity.Host]{}
 	m := dao.Host.Ctx(ctx).Safe(true)
@@ -82,13 +87,8 @@ func (*sHost) Del(ctx context.Context, in *do.Host) (err error) {
 	return
 }
 
-func (s *sHost) TestSSH(ctx context.Context, id int) (err error) {
-	eHost, err := s.Get(ctx, &do.Host{Id: id})
-	if err != nil {
-		return err
-	}
-
-	client, err := s.SshClient(eHost)
+func (s *sHost) TestSSH(ctx context.Context, in *entity.Host) (err error) {
+	client, err := s.SshClient(in)
 	if err != nil {
 		return err
 	}
@@ -134,4 +134,38 @@ func (s *sHost) DownloadFile(ctx context.Context, in *mid.DownloadFileIn) error 
 	res.ServeContent(filepath.Base(in.Path), time.Now(), file)
 
 	return nil
+}
+
+func (s *sHost) CanAccess(ctx context.Context, in *entity.Host) (bool, error) {
+	if service.CurrentUser(ctx).IsAdmin() {
+		return true, nil
+	}
+
+	// 1. 获取机器所属主机组 in
+	eHostGroup, err := service.HostGroup().Get(ctx, &do.HostGroup{Id: in.HostGroupId})
+	if err != nil {
+		return false, err
+	}
+	// 2. 获取主机组授权的角色和用户 eHostGroup.RoleIds eHostGroup.UserIds
+	// 3. 获取当前用户的角色
+	eUser, err := service.User().Get(ctx, &do.User{Id: service.CurrentUser(ctx).UserId})
+	if err != nil {
+		return false, err
+	}
+	// 4. 如果当前用户存在于主机组授权的用户列表，则有权限
+	for _, hostGroupUserId := range eHostGroup.UserIds.Array() {
+		if eUser.Id == gconv.Int(hostGroupUserId) {
+			return true, nil
+		}
+	}
+	// 5. 如果当前用户拥有的角色存在于主机组授权的角色，则有权限
+	for _, userRoleId := range eUser.RoleIds.Array() {
+		for _, hostGroupRoleId := range eHostGroup.RoleIds.Array() {
+			if userRoleId == hostGroupRoleId {
+				return true, nil
+			}
+		}
+	}
+
+	return false, nil
 }

@@ -25,6 +25,8 @@ type HostGroupColumns struct {
 	Rank      string // 排序
 	ParentId  string // 上级主机组 id
 	UpdatedAt string // 更新时间
+	RoleIds   string // 可访问的角色 id 列表
+	UserIds   string // 可访问的用户 id 列表
 }
 
 // hostGroupColumns holds the columns for table host_group.
@@ -34,6 +36,8 @@ var hostGroupColumns = HostGroupColumns{
 	Rank:      "rank",
 	ParentId:  "parent_id",
 	UpdatedAt: "updated_at",
+	RoleIds:   "role_ids",
+	UserIds:   "user_ids",
 }
 
 // NewHostGroupDao creates and returns a new DAO object for table data access.

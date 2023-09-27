@@ -15,6 +15,14 @@ type GetLstRes struct {
 	List []*entity.HostGroup `json:"list"`
 }
 
+type GetPartialListReq struct {
+	g.Meta `method:"get" path:"/host-group/partial-list" summary:"获取主机组列表(部分字段)" tags:"主机组"`
+}
+
+type GetPartialListRes struct {
+	List []*mid.HostGroupPartial `json:"list"`
+}
+
 type AddReq struct {
 	g.Meta `method:"post" path:"/host-group" summary:"添加主机组" tags:"主机组"`
 	*mid.HostGroup

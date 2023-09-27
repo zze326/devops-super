@@ -44,6 +44,11 @@ func (*sUser) Upt(ctx context.Context, in *do.User) (err error) {
 	return
 }
 
+func (*sUser) GetLst(ctx context.Context) (out []*entity.User, err error) {
+	err = dao.User.Ctx(ctx).FieldsEx(cols.RoleIds, cols.Phone, cols.Password, cols.DeptId).OrderDesc(cols.Id).Scan(&out)
+	return
+}
+
 func (*sUser) GetPageLst(ctx context.Context, in *api.PageLstReq) (out *api.PageLstRes[*entity.User], err error) {
 	out = &api.PageLstRes[*entity.User]{}
 	m := dao.User.Ctx(ctx).Safe(true)

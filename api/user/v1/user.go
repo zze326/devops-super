@@ -7,6 +7,14 @@ import (
 	"github.com/gogf/gf/v2/frame/g"
 )
 
+type GetLstReq struct {
+	g.Meta `method:"get" path:"/user/list" summary:"获取用户列表" tags:"用户"`
+}
+
+type GetLstRes struct {
+	List []*entity.User `json:"list"`
+}
+
 type GetPageLstReq struct {
 	g.Meta `method:"get" path:"/user/page-list" summary:"分页获取用户列表" tags:"用户"`
 	*api.PageLstReq

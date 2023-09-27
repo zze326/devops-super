@@ -17,6 +17,16 @@ func (c *ControllerV1) WsSftpFileManager(ctx context.Context, req *v1.WsSftpFile
 	if eHost == nil {
 		return nil, gerror.New("主机不存在")
 	}
+
+	can, err := service.Host().CanAccess(ctx, eHost)
+	if err != nil {
+		return nil, err
+	}
+
+	if !can {
+		return nil, gerror.New("未授权")
+	}
+
 	err = service.Host().WsSftpFileManager(ctx, eHost)
 	return
 }

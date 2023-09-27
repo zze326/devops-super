@@ -17,6 +17,7 @@ type (
 	IUser interface {
 		Add(ctx context.Context, in *entity.User) (err error)
 		Upt(ctx context.Context, in *do.User) (err error)
+		GetLst(ctx context.Context) (out []*entity.User, err error)
 		GetPageLst(ctx context.Context, in *api.PageLstReq) (out *api.PageLstRes[*entity.User], err error)
 		Get(ctx context.Context, userDo *do.User) (out *entity.User, err error)
 		GetComb(ctx context.Context, userDo *do.User) (out *comb.User, err error)

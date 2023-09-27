@@ -11,3 +11,7 @@ type RequestUser struct {
 	RealName string `json:"realName"`
 	Username string `json:"username"`
 }
+
+func (u *RequestUser) IsAdmin() bool {
+	return u.Username == "admin"
+}

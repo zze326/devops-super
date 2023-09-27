@@ -26,6 +26,7 @@ func (s *sHost) WsSftpFileManager(ctx context.Context, in *entity.Host) (err err
 	if wsCtx.ws, err = wsCtx.request.WebSocket(); err != nil {
 		return err
 	}
+	defer wsCtx.ws.Close()
 
 	sftpClient, err := s.SftpClient(in)
 	if err != nil {
