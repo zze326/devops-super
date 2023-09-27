@@ -1,6 +1,6 @@
 ROOT_DIR    = $(shell pwd)
 NAMESPACE   = "default"
-DEPLOY_NAME = "devops-helper"
-DOCKER_NAME = "devops-helper"
+DEPLOY_NAME = "devops-super"
+DOCKER_NAME = "devops-super"
 
 include ./hack/hack.mk

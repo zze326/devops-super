@@ -10,7 +10,7 @@ type Host struct {
 	UseKey      bool   `v:"required" json:"useKey"`
 	Desc        string `json:"desc"`
 	SaveSession bool   `v:"required" json:"saveSession"`
-	HostGroupId int    `v:"required" json:"hostGroupId"`
+	HostGroupId int    `json:"hostGroupId"`
 }
 
 type DownloadFileIn struct {
