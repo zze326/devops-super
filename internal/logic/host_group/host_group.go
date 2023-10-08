@@ -62,6 +62,7 @@ func (*sHostGroup) Upt(ctx context.Context, in *do.HostGroup) (err error) {
 			return gerror.Newf("已存在名称为 %s 主机组", in.Name)
 		}
 	}
+
 	_, err = dao.HostGroup.Ctx(ctx).WherePri(in.Id).OmitNilData().Data(in).Update()
 	return
 }

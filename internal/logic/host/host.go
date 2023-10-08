@@ -146,6 +146,11 @@ func (s *sHost) CanAccess(ctx context.Context, in *entity.Host) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+
+	// 如果不属于任何主机组，则也无权限访问
+	if eHostGroup == nil {
+		return false, nil
+	}
 	// 2. 获取主机组授权的角色和用户 eHostGroup.RoleIds eHostGroup.UserIds
 	// 3. 获取当前用户的角色
 	eUser, err := service.User().Get(ctx, &do.User{Id: service.CurrentUser(ctx).UserId})
@@ -153,19 +158,58 @@ func (s *sHost) CanAccess(ctx context.Context, in *entity.Host) (bool, error) {
 		return false, err
 	}
 	// 4. 如果当前用户存在于主机组授权的用户列表，则有权限
-	for _, hostGroupUserId := range eHostGroup.UserIds.Array() {
-		if eUser.Id == gconv.Int(hostGroupUserId) {
-			return true, nil
+	if !eHostGroup.UserIds.IsNil() {
+		for _, hostGroupUserId := range eHostGroup.UserIds.Array() {
+			if eUser.Id == gconv.Int(hostGroupUserId) {
+				return true, nil
+			}
 		}
 	}
-	// 5. 如果当前用户拥有的角色存在于主机组授权的角色，则有权限
-	for _, userRoleId := range eUser.RoleIds.Array() {
-		for _, hostGroupRoleId := range eHostGroup.RoleIds.Array() {
-			if userRoleId == hostGroupRoleId {
-				return true, nil
+	if !eHostGroup.RoleIds.IsNil() {
+		// 5. 如果当前用户拥有的角色存在于主机组授权的角色，则有权限
+		for _, userRoleId := range eUser.RoleIds.Array() {
+			for _, hostGroupRoleId := range eHostGroup.RoleIds.Array() {
+				if userRoleId == hostGroupRoleId {
+					return true, nil
+				}
 			}
 		}
 	}
 
 	return false, nil
+}
+
+func (s *sHost) GetAuthorizedLst(ctx context.Context) (out []*entity.Host, err error) {
+	currentUser := service.CurrentUser(ctx)
+	if currentUser.IsAdmin() {
+		err = dao.Host.Ctx(ctx).FieldsEx(cols.Password).Scan(&out)
+		return
+	}
+	var (
+		eUser         = new(entity.User)
+		eHostGroups   = make([]*entity.HostGroup, 0)
+		eHostGroupIds = make([]int, 0)
+	)
+	if err = dao.User.Ctx(ctx).WherePri(currentUser.UserId).Scan(eUser); err != nil {
+		return
+	}
+
+	m := dao.HostGroup.Ctx(ctx).Fields(dao.HostGroup.Columns().Id).WhereOrf("JSON_CONTAINS(%s, '%d')", dao.HostGroup.Columns().UserIds, eUser.Id).Safe(true)
+
+	for _, roleId := range eUser.RoleIds.Array() {
+		m = m.WhereOrf("JSON_CONTAINS(%s, '%s')", dao.HostGroup.Columns().RoleIds, roleId)
+	}
+
+	if err = m.Scan(&eHostGroups); err != nil {
+		return
+	}
+
+	for _, group := range eHostGroups {
+		eHostGroupIds = append(eHostGroupIds, group.Id)
+	}
+
+	if err = dao.Host.Ctx(ctx).WhereIn(cols.HostGroupId, eHostGroupIds).FieldsEx(cols.Password).OrderDesc(cols.Id).Scan(&out); err != nil {
+		return
+	}
+	return
 }

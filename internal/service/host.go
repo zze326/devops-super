@@ -27,6 +27,7 @@ type (
 		TestSSH(ctx context.Context, in *entity.Host) (err error)
 		DownloadFile(ctx context.Context, in *mid.DownloadFileIn) error
 		CanAccess(ctx context.Context, in *entity.Host) (bool, error)
+		GetAuthorizedLst(ctx context.Context) (out []*entity.Host, err error)
 		WsSftpFileManager(ctx context.Context, in *entity.Host) (err error)
 		SftpClient(in *entity.Host) (*sftp.Client, error)
 		WsTerminal(ctx context.Context, in *entity.Host) error

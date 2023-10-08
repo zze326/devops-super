@@ -16,6 +16,14 @@ type GetRes struct {
 	*entity.Host
 }
 
+type GetAuthorizedLstReq struct {
+	g.Meta `method:"get" path:"/host/authorized-list" summary:"获取当前用户拥有权限的主机列表" tags:"主机"`
+}
+
+type GetAuthorizedLstRes struct {
+	List []*entity.Host `json:"list"`
+}
+
 type GetPageLstReq struct {
 	g.Meta `method:"get" path:"/host/page-list" summary:"分页获取主机列表" tags:"主机"`
 	*api.PageLstReq

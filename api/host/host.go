@@ -12,6 +12,7 @@ import (
 
 type IHostV1 interface {
 	Get(ctx context.Context, req *v1.GetReq) (res *v1.GetRes, err error)
+	GetAuthorizedLst(ctx context.Context, req *v1.GetAuthorizedLstReq) (res *v1.GetAuthorizedLstRes, err error)
 	GetPageLst(ctx context.Context, req *v1.GetPageLstReq) (res *v1.GetPageLstRes, err error)
 	Add(ctx context.Context, req *v1.AddReq) (res *v1.AddRes, err error)
 	Upt(ctx context.Context, req *v1.UptReq) (res *v1.UptRes, err error)
