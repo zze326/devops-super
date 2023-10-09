@@ -8,7 +8,7 @@ import (
 )
 
 type GetReq struct {
-	g.Meta `method:"get" path:"/host/{id}" summary:"获取主机" tags:"主机"`
+	g.Meta `method:"get" path:"/host/{id}/one" summary:"获取主机" tags:"主机"`
 	Id     int `v:"required" path:"id"`
 }
 

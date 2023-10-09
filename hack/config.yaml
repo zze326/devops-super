@@ -10,7 +10,7 @@ gfcli:
     dao:
       - link: "mysql:devops_super:devops_super.zze@tcp(192.168.2.231:3306)/devops_super?loc=Local&parseTime=true"
         group: default
-        tables: "user, permission, role, dept, host, host_group, host_terminal_session"
+        tables: "user, permission, role, dept, host, host_group, host_terminal_session, kubernetes_config, ci_env"
         withTime: false
         gJsonSupport: true
         overwriteDao: true
