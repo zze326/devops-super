@@ -6,6 +6,7 @@ import (
 	"devops-super/internal/dao"
 	"devops-super/internal/model/do"
 	"devops-super/internal/model/entity"
+	"devops-super/internal/model/mid"
 	"devops-super/internal/service"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/util/gutil"
@@ -63,6 +64,11 @@ func (*sKubernetesConfig) GetPageLst(ctx context.Context, in *api.PageLstReq) (o
 
 func (*sKubernetesConfig) GetLst(ctx context.Context) (out []*entity.KubernetesConfig, err error) {
 	err = dao.KubernetesConfig.Ctx(ctx).OrderDesc(cols.Id).Scan(&out)
+	return
+}
+
+func (*sKubernetesConfig) GetPartialLst(ctx context.Context) (out []*mid.KubernetesConfigPartial, err error) {
+	err = dao.KubernetesConfig.Ctx(ctx).FieldsEx(cols.Config, cols.UpdatedAt).OrderDesc(cols.Id).Scan(&out)
 	return
 }
 

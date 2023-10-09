@@ -10,6 +10,7 @@ import (
 	"devops-super/api"
 	"devops-super/internal/model/do"
 	"devops-super/internal/model/entity"
+	"devops-super/internal/model/mid"
 )
 
 type (
@@ -18,6 +19,7 @@ type (
 		Upt(ctx context.Context, in *do.KubernetesConfig) (err error)
 		GetPageLst(ctx context.Context, in *api.PageLstReq) (out *api.PageLstRes[*entity.KubernetesConfig], err error)
 		GetLst(ctx context.Context) (out []*entity.KubernetesConfig, err error)
+		GetPartialLst(ctx context.Context) (out []*mid.KubernetesConfigPartial, err error)
 		Get(ctx context.Context, in *do.KubernetesConfig) (out *entity.KubernetesConfig, err error)
 		Del(ctx context.Context, in *do.KubernetesConfig) (err error)
 	}

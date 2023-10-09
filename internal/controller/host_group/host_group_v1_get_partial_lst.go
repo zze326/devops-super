@@ -8,7 +8,7 @@ import (
 	"devops-super/api/host_group/v1"
 )
 
-func (c *ControllerV1) GetPartialList(ctx context.Context, req *v1.GetPartialListReq) (res *v1.GetPartialListRes, err error) {
+func (c *ControllerV1) GetPartialLst(ctx context.Context, req *v1.GetPartialLstReq) (res *v1.GetPartialLstRes, err error) {
 	var resList []*mid.HostGroupPartial
 	eHostGroupList, err := service.HostGroup().GetLst(ctx, "")
 	if err != nil {
@@ -27,7 +27,7 @@ func (c *ControllerV1) GetPartialList(ctx context.Context, req *v1.GetPartialLis
 		})
 	}
 
-	res = &v1.GetPartialListRes{
+	res = &v1.GetPartialLstRes{
 		List: resList,
 	}
 

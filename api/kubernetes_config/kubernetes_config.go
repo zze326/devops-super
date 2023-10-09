@@ -16,4 +16,5 @@ type IKubernetesConfigV1 interface {
 	Upt(ctx context.Context, req *v1.UptReq) (res *v1.UptRes, err error)
 	Del(ctx context.Context, req *v1.DelReq) (res *v1.DelRes, err error)
 	GetLst(ctx context.Context, req *v1.GetLstReq) (res *v1.GetLstRes, err error)
+	GetPartialLst(ctx context.Context, req *v1.GetPartialLstReq) (res *v1.GetPartialLstRes, err error)
 }

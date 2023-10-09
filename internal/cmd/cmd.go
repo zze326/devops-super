@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"devops-super/internal/controller/ci_env"
+	"devops-super/internal/controller/ci_pipeline"
 	"devops-super/internal/controller/dept"
 	"devops-super/internal/controller/host"
 	"devops-super/internal/controller/host_group"
@@ -48,7 +49,8 @@ var (
 						host_terminal_session.NewV1(), // 主机会话
 						kubernetes_config.NewV1(),     // Kubernetes 配置
 						// 持续集成
-						ci_env.NewV1(), // ci 环境
+						ci_env.NewV1(),      // ci 环境
+						ci_pipeline.NewV1(), // ci 流水线
 					)
 				})
 			})

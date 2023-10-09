@@ -46,3 +46,11 @@ type GetLstReq struct {
 type GetLstRes struct {
 	List []*entity.KubernetesConfig `json:"list"`
 }
+
+type GetPartialLstReq struct {
+	g.Meta `method:"get" path:"/kubernetes-config/partial-list" summary:"获取所有 Kubernetes 配置列表(部分字段)" tags:"主机组"`
+}
+
+type GetPartialLstRes struct {
+	List []*mid.KubernetesConfigPartial `json:"list"`
+}
