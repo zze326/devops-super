@@ -17,5 +17,6 @@ temp/
 temp.yaml
 bin
 **/config/config-prod.yaml
+**/config/config-demo.yaml
 dist
 host-sessions
