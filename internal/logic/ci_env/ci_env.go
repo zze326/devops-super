@@ -71,6 +71,22 @@ func (*sCiEnv) Get(ctx context.Context, in *do.CiEnv) (out *entity.CiEnv, err er
 	return
 }
 
+func (*sCiEnv) GetIdNameMap(ctx context.Context, ids []int) (out map[int]string, err error) {
+	out = make(map[int]string, 0)
+	if len(ids) == 0 {
+		return
+	}
+	var es []*entity.CiEnv
+	if err = dao.CiEnv.Ctx(ctx).WhereIn(cols.Id, ids).Limit(1).Scan(&es); err != nil {
+		return
+	}
+
+	for _, e := range es {
+		out[e.Id] = e.Name
+	}
+	return
+}
+
 func (*sCiEnv) Del(ctx context.Context, in *do.CiEnv) (err error) {
 	_, err = dao.CiEnv.Ctx(ctx).Where(in).OmitNilWhere().Delete()
 	return

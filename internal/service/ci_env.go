@@ -19,6 +19,7 @@ type (
 		GetPageLst(ctx context.Context, in *api.PageLstReq) (out *api.PageLstRes[*entity.CiEnv], err error)
 		GetLst(ctx context.Context) (out []*entity.CiEnv, err error)
 		Get(ctx context.Context, in *do.CiEnv) (out *entity.CiEnv, err error)
+		GetIdNameMap(ctx context.Context, ids []int) (out map[int]string, err error)
 		Del(ctx context.Context, in *do.CiEnv) (err error)
 	}
 )

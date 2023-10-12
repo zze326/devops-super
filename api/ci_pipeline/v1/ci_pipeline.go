@@ -4,6 +4,7 @@ import (
 	"devops-super/api"
 	"devops-super/internal/model/entity"
 	"devops-super/internal/model/mid"
+	"github.com/gogf/gf/v2/encoding/gjson"
 	"github.com/gogf/gf/v2/frame/g"
 )
 
@@ -31,6 +32,14 @@ type UptReq struct {
 
 type UptRes struct{}
 
+type UptConfigReq struct {
+	g.Meta `method:"patch" path:"/ci-pipeline/{id}/config" summary:"更新 CI 流水线配置" tags:"CI 流水线"`
+	Id     int         `v:"min:1#id必须" path:"id"`
+	Config *gjson.Json `v:"required" json:"config"`
+}
+
+type UptConfigRes struct{}
+
 type DelReq struct {
 	g.Meta `method:"delete" path:"/ci-pipeline/{id}" summary:"删除 CI 流水线" tags:"CI 流水线"`
 	Id     int ` v:"min:1#id必须" path:"id"`
@@ -45,4 +54,14 @@ type GetLstReq struct {
 
 type GetLstRes struct {
 	List []*entity.CiPipeline `json:"list"`
+}
+
+type GetConfigReq struct {
+	g.Meta `method:"get" path:"/ci-pipeline/{id}/config" summary:"获取 CI 流水线配置" tags:"CI 流水线"`
+	Id     int ` v:"min:1#id必须" path:"id"`
+}
+
+type GetConfigRes struct {
+	Config *gjson.Json    `json:"config"`
+	EnvMap map[int]string `json:"envMap"`
 }
