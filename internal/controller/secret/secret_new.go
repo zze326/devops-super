@@ -2,14 +2,14 @@
 // Code generated and maintained by GoFrame CLI tool. DO NOT EDIT.
 // =================================================================================
 
-package kubernetes_config
+package secret
 
 import (
-	"devops-super/api/kubernetes_config"
+	"devops-super/api/secret"
 )
 
 type ControllerV1 struct{}
 
-func NewV1() kubernetes_config.IKubernetesConfigV1 {
+func NewV1() secret.ISecretV1 {
 	return &ControllerV1{}
 }

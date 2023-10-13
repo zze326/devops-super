@@ -8,10 +8,10 @@ import (
 	"devops-super/internal/controller/host"
 	"devops-super/internal/controller/host_group"
 	"devops-super/internal/controller/host_terminal_session"
-	"devops-super/internal/controller/kubernetes_config"
 	"devops-super/internal/controller/permission"
 	"devops-super/internal/controller/public"
 	"devops-super/internal/controller/role"
+	"devops-super/internal/controller/secret"
 	"devops-super/internal/controller/user"
 	"devops-super/internal/service"
 
@@ -47,7 +47,7 @@ var (
 						host_group.NewV1(),            // 主机组
 						host.NewV1(),                  // 主机
 						host_terminal_session.NewV1(), // 主机会话
-						kubernetes_config.NewV1(),     // Kubernetes 配置
+						secret.NewV1(),                // 秘钥管理
 						// 持续集成
 						ci_env.NewV1(),      // ci 环境
 						ci_pipeline.NewV1(), // ci 流水线

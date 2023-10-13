@@ -20,3 +20,4 @@ bin
 **/config/config-demo.yaml
 dist
 host-sessions
+code

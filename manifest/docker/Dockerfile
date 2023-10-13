@@ -14,4 +14,4 @@ RUN chmod +x $WORKDIR/main
 #                                   START
 ###############################################################################
 WORKDIR $WORKDIR
-CMD ./main --gf.gcfg.file=config-prod.yaml
+CMD ./main --gf.gcfg.file=config-demo.yaml

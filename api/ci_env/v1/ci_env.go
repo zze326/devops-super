@@ -40,7 +40,6 @@ type DelRes struct{}
 
 type GetLstReq struct {
 	g.Meta `method:"get" path:"/ci-env/list" summary:"获取所有 CI 环境列表" tags:"CI 环境"`
-	*api.PageLstReq
 }
 
 type GetLstRes struct {

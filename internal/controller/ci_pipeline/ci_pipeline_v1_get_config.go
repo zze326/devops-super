@@ -14,8 +14,10 @@ func (c *ControllerV1) GetConfig(ctx context.Context, req *v1.GetConfigReq) (res
 	var (
 		ePipeline *entity.CiPipeline
 		config    mid.CiPipelineConfig
+		entityMap map[int]*entity.CiEnv
 	)
 	res = new(v1.GetConfigRes)
+	res.EnvMap = make(map[int]string, 0)
 	ePipeline, err = service.CiPipeline().Get(ctx, &do.CiPipeline{Id: req.Id})
 	if err != nil {
 		return
@@ -26,6 +28,10 @@ func (c *ControllerV1) GetConfig(ctx context.Context, req *v1.GetConfigReq) (res
 		return
 	}
 
-	res.EnvMap, err = service.CiEnv().GetIdNameMap(ctx, config.GetEnvIds())
+	entityMap, err = service.CiEnv().GetEntityMap(ctx, config.GetEnvIds())
+	for id, e := range entityMap {
+		res.EnvMap[id] = e.Name
+	}
+
 	return
 }

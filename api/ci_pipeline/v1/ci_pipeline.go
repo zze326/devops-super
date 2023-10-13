@@ -65,3 +65,11 @@ type GetConfigRes struct {
 	Config *gjson.Json    `json:"config"`
 	EnvMap map[int]string `json:"envMap"`
 }
+
+type RunReq struct {
+	g.Meta `method:"post" path:"/ci-pipeline/{id}/run" summary:"运行流水线" tags:"CI 流水线"`
+	Id     int ` v:"min:1#id必须" path:"id"`
+}
+
+type RunRes struct {
+}

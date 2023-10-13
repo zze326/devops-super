@@ -17,10 +17,30 @@ func (c CiPipelineConfig) GetEnvIds() []int {
 }
 
 type CiPipelineConfigEnvItem struct {
-	Id     int                             `json:"id"`
-	Stages []*CiPipelineConfigEnvStageItem `json:"stages"`
+	Id         int                             `json:"id" yaml:"id"`
+	Image      string                          `json:"image" yaml:"image"`
+	SecretName string                          `json:"secretName" yaml:"secretName"`
+	Stages     []*CiPipelineConfigEnvStageItem `json:"stages" yaml:"stages"`
 }
 
 type CiPipelineConfigEnvStageItem struct {
-	Name string `json:"name"`
+	Name  string                              `json:"name" yaml:"name"`
+	Tasks []*CiPipelineConfigEnvStageTaskItem `json:"tasks" yaml:"tasks"`
+}
+type CiPipelineConfigEnvStageTaskItem struct {
+	Type          int            `json:"type" yaml:"type"`
+	GitPullData   *GitPullData   `json:"gitPullData,omitempty"`
+	ShellExecData *ShellExecData `json:"shellExecData,omitempty"`
+}
+
+type GitPullData struct {
+	GitUrl       string                   `json:"gitUrl,omitempty"`
+	Branch       string                   `json:"branch,omitempty"`
+	SecretId     int                      `json:"secretId,omitempty"`
+	GitBasicAuth *UsernamePasswordContent `json:"GitBasicAuth,omitempty"`
+}
+
+type ShellExecData struct {
+	WorkDir string `json:"workDir,omitempty"`
+	Content string `json:"content"`
 }

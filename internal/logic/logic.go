@@ -12,9 +12,9 @@ import (
 	_ "devops-super/internal/logic/host"
 	_ "devops-super/internal/logic/host_group"
 	_ "devops-super/internal/logic/host_terminal_session"
-	_ "devops-super/internal/logic/kubernetes_config"
 	_ "devops-super/internal/logic/middleware"
 	_ "devops-super/internal/logic/permission"
 	_ "devops-super/internal/logic/role"
+	_ "devops-super/internal/logic/secret"
 	_ "devops-super/internal/logic/user"
 )

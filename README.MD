@@ -14,7 +14,7 @@
 
 功能展望：
 - [ ] 基于 Kubernetes 原生 Job 的持续集成（CI）；
-  - [x] Kubernetes Config 管理；
+  - [x] 秘钥管理；
   - [x] 构建环境管理；
   - [ ] 流水线管理（编排）；
 
@@ -24,6 +24,7 @@
 
 - 管理员：`admin`，密码：`devops.zze`；
 - 测试账号：`test`，密码：`devops.zze`；
+>  数据库每小时自动重置。
 
 效果图：
 

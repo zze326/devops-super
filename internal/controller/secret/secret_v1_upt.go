@@ -1,4 +1,4 @@
-package kubernetes_config
+package secret
 
 import (
 	"context"
@@ -6,14 +6,14 @@ import (
 	"devops-super/internal/service"
 	"github.com/gogf/gf/v2/util/gconv"
 
-	"devops-super/api/kubernetes_config/v1"
+	"devops-super/api/secret/v1"
 )
 
 func (c *ControllerV1) Upt(ctx context.Context, req *v1.UptReq) (res *v1.UptRes, err error) {
-	in := new(do.KubernetesConfig)
+	in := new(do.Secret)
 	if err = gconv.Struct(req, in); err != nil {
 		return
 	}
-	err = service.KubernetesConfig().Upt(ctx, in)
+	err = service.Secret().Upt(ctx, in)
 	return
 }

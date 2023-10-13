@@ -71,8 +71,8 @@ func (*sCiEnv) Get(ctx context.Context, in *do.CiEnv) (out *entity.CiEnv, err er
 	return
 }
 
-func (*sCiEnv) GetIdNameMap(ctx context.Context, ids []int) (out map[int]string, err error) {
-	out = make(map[int]string, 0)
+func (*sCiEnv) GetEntityMap(ctx context.Context, ids []int) (out map[int]*entity.CiEnv, err error) {
+	out = make(map[int]*entity.CiEnv, 0)
 	if len(ids) == 0 {
 		return
 	}
@@ -82,7 +82,7 @@ func (*sCiEnv) GetIdNameMap(ctx context.Context, ids []int) (out map[int]string,
 	}
 
 	for _, e := range es {
-		out[e.Id] = e.Name
+		out[e.Id] = e
 	}
 	return
 }
