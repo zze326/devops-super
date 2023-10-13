@@ -20,22 +20,24 @@ type CiPipelineDao struct {
 
 // CiPipelineColumns defines and stores column names for table ci_pipeline.
 type CiPipelineColumns struct {
-	Id                 string //
-	Name               string // 名称
-	KubernetesConfigId string // 关联的 Kubernetes Config id
-	Config             string // 配置
-	Desc               string // 描述
-	UpdatedAt          string // 更新时间
+	Id                  string //
+	Name                string // 名称
+	KubernetesConfigId  string // 关联的 Kubernetes Config id
+	KubernetesNamespace string // Pod 所在命名空间
+	Config              string // 配置
+	Desc                string // 描述
+	UpdatedAt           string // 更新时间
 }
 
 // ciPipelineColumns holds the columns for table ci_pipeline.
 var ciPipelineColumns = CiPipelineColumns{
-	Id:                 "id",
-	Name:               "name",
-	KubernetesConfigId: "kubernetes_config_id",
-	Config:             "config",
-	Desc:               "desc",
-	UpdatedAt:          "updated_at",
+	Id:                  "id",
+	Name:                "name",
+	KubernetesConfigId:  "kubernetes_config_id",
+	KubernetesNamespace: "kubernetes_namespace",
+	Config:              "config",
+	Desc:                "desc",
+	UpdatedAt:           "updated_at",
 }
 
 // NewCiPipelineDao creates and returns a new DAO object for table data access.

@@ -1,9 +1,10 @@
 package mid
 
 type CiPipeline struct {
-	Name               string `v:"required|max-length:30" json:"name"`
-	KubernetesConfigId int    `v:"required" json:"kubernetesConfigId"`
-	Desc               string `json:"desc"`
+	Name                string `v:"required|max-length:30" json:"name"`
+	KubernetesConfigId  int    `v:"required" json:"kubernetesConfigId"`
+	KubernetesNamespace string `json:"kubernetesNamespace"`
+	Desc                string `json:"desc"`
 }
 
 type CiPipelineConfig []*CiPipelineConfigEnvItem

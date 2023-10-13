@@ -10,6 +10,7 @@ import (
 	"devops-super/utility/thirdclients/kubernetes"
 	"fmt"
 	"github.com/gogf/gf/v2/encoding/gjson"
+	"github.com/gogf/gf/v2/util/gutil"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"time"
@@ -22,6 +23,7 @@ func (s *sCiPipeline) Run(ctx context.Context, id int) (err error) {
 		kubeConfigSecret *entity.Secret
 		kubeConfig       *mid.TextContent
 		kubeClient       *kubernetes.Client
+		kubeNamespace    = consts.CI_CLIENT_POD_NAMESPACE
 		envMap           map[int]*entity.CiEnv
 	)
 	ePipeline, err = s.Get(ctx, &do.CiPipeline{Id: id})
@@ -77,11 +79,15 @@ func (s *sCiPipeline) Run(ctx context.Context, id int) (err error) {
 		return
 	}
 
-	return createCiPod(kubeClient, fmt.Sprintf("ci-pod-%d-%s", ePipeline.Id, time.Now().Format("20060102150405")), config)
+	if !gutil.IsEmpty(ePipeline.KubernetesNamespace) {
+		kubeNamespace = ePipeline.KubernetesNamespace
+	}
+
+	return createCiPod(kubeClient, kubeNamespace, fmt.Sprintf("ci-pod-%d-%s", ePipeline.Id, time.Now().Format("20060102150405")), config)
 }
 
 // 创建 ci pod
-func createCiPod(kubeClient *kubernetes.Client, name string, ciConfig mid.CiPipelineConfig) error {
+func createCiPod(kubeClient *kubernetes.Client, namespace, name string, ciConfig mid.CiPipelineConfig) error {
 	var (
 		containers     []corev1.Container
 		initContainers []corev1.Container
@@ -128,7 +134,7 @@ func createCiPod(kubeClient *kubernetes.Client, name string, ciConfig mid.CiPipe
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: consts.CI_CLIENT_POD_NAMESPACE,
+			Namespace: namespace,
 		},
 		Spec: corev1.PodSpec{
 			InitContainers: initContainers,
@@ -144,7 +150,7 @@ func createCiPod(kubeClient *kubernetes.Client, name string, ciConfig mid.CiPipe
 			RestartPolicy: corev1.RestartPolicyNever,
 		},
 	}
-	if _, err := kubeClient.CoreV1().Pods(consts.CI_CLIENT_POD_NAMESPACE).Create(context.Background(), pod, metav1.CreateOptions{}); err != nil {
+	if _, err := kubeClient.CoreV1().Pods(namespace).Create(context.Background(), pod, metav1.CreateOptions{}); err != nil {
 		return err
 	}
 	return nil

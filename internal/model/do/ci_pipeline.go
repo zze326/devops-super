@@ -12,11 +12,12 @@ import (
 
 // CiPipeline is the golang structure of table ci_pipeline for DAO operations like Where/Data.
 type CiPipeline struct {
-	g.Meta             `orm:"table:ci_pipeline, do:true"`
-	Id                 interface{} //
-	Name               interface{} // 名称
-	KubernetesConfigId interface{} // 关联的 Kubernetes Config id
-	Config             *gjson.Json // 配置
-	Desc               interface{} // 描述
-	UpdatedAt          *gtime.Time // 更新时间
+	g.Meta              `orm:"table:ci_pipeline, do:true"`
+	Id                  interface{} //
+	Name                interface{} // 名称
+	KubernetesConfigId  interface{} // 关联的 Kubernetes Config id
+	KubernetesNamespace interface{} // Pod 所在命名空间
+	Config              *gjson.Json // 配置
+	Desc                interface{} // 描述
+	UpdatedAt           *gtime.Time // 更新时间
 }
