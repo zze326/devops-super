@@ -21,7 +21,7 @@ CREATE TABLE `ci_env` (
 -- Records of ci_env
 -- ----------------------------
 BEGIN;
-INSERT INTO `ci_env` (`id`, `name`, `image`, `secret_name`, `updated_at`) VALUES (1, 'Golang 1.19', 'test:12', '', '2023-10-09 16:11:32');
+INSERT INTO `ci_env` (`id`, `name`, `image`, `secret_name`, `updated_at`) VALUES (1, 'Golang 1.19', 'test:12', 'azj', '2023-10-12 17:28:13');
 COMMIT;
 
 -- ----------------------------
@@ -42,7 +42,7 @@ CREATE TABLE `ci_pipeline` (
 -- Records of ci_pipeline
 -- ----------------------------
 BEGIN;
-INSERT INTO `ci_pipeline` (`id`, `name`, `kubernetes_config_id`, `config`, `desc`, `updated_at`) VALUES (1, 'devops-platform app-api 构建', 1, NULL, 'test', '2023-10-09 18:16:16');
+INSERT INTO `ci_pipeline` (`id`, `name`, `kubernetes_config_id`, `config`, `desc`, `updated_at`) VALUES (1, 'test', 1, '[{\"id\": 1, \"stages\": [{\"name\": \"拉取代码\", \"tasks\": [{\"type\": 1, \"gitPullData\": {\"branch\": \"master\", \"gitUrl\": \"http://192.168.1.195:8990/scm/ops/devops-platform-fe.git\", \"secretId\": 2}, \"shellExecData\": {}}]}, {\"name\": \"编译\", \"tasks\": [{\"type\": 2, \"gitPullData\": {}, \"shellExecData\": {\"content\": \"echo go build -o app\", \"workDir\": \"devops-platform-fe\"}}]}]}, {\"id\": 1, \"stages\": [{\"name\": \"上传镜像\", \"tasks\": [{\"type\": 2, \"gitPullData\": {}, \"shellExecData\": {\"content\": \"echo docker push\", \"workDir\": \"devops-platform-fe\"}}]}]}]', 'test', '2023-10-13 15:23:19');
 COMMIT;
 
 -- ----------------------------
@@ -163,25 +163,6 @@ INSERT INTO `host_terminal_session` (`id`, `host_id`, `host_addr`, `host_name`, 
 COMMIT;
 
 -- ----------------------------
--- Table structure for kubernetes_config
--- ----------------------------
-DROP TABLE IF EXISTS `kubernetes_config`;
-CREATE TABLE `kubernetes_config` (
-                                     `id` int(11) NOT NULL AUTO_INCREMENT,
-                                     `name` varchar(64) NOT NULL COMMENT '名称',
-                                     `config` text NOT NULL COMMENT '配置内容',
-                                     `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-                                     PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4;
-
--- ----------------------------
--- Records of kubernetes_config
--- ----------------------------
-BEGIN;
-INSERT INTO `kubernetes_config` (`id`, `name`, `config`, `updated_at`) VALUES (1, '线下', 'apiVersion: v1\nclusters:\n- cluster:\n    certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURsRENDQW55Z0F3SUJBZ0lVWE4yVVVQZVMzcU9SbXhIeEc1eS9sMmh6QWE4d0RRWUpLb1pJaHZjTkFRRUwKQlFBd1lURUxNQWtHQTFVRUJoTUNRMDR4RVRBUEJnTlZCQWdUQ0VoaGJtZGFhRzkxTVFzd0NRWURWUVFIRXdKWQpVekVNTUFvR0ExVUVDaE1EYXpoek1ROHdEUVlEVlFRTEV3WlRlWE4wWlcweEV6QVJCZ05WQkFNVENtdDFZbVZ5CmJtVjBaWE13SUJjTk1qSXhNVEkxTVRBeE9EQXdXaGdQTWpFeU1qRXhNREV4TURFNE1EQmFNR0V4Q3pBSkJnTlYKQkFZVEFrTk9NUkV3RHdZRFZRUUlFd2hJWVc1bldtaHZkVEVMTUFrR0ExVUVCeE1DV0ZNeEREQUtCZ05WQkFvVApBMnM0Y3pFUE1BMEdBMVVFQ3hNR1UzbHpkR1Z0TVJNd0VRWURWUVFERXdwcmRXSmxjbTVsZEdWek1JSUJJakFOCkJna3Foa2lHOXcwQkFRRUZBQU9DQVE4QU1JSUJDZ0tDQVFFQXhNQTZWc3VNc1lXRDl2dVM5RmlKaU5CZGo3WEYKbm0rT0tlZWllNFc4aStCaFBYUHorWlBTcUptSkNXNHlPTjQ4MW02ZHRJU1hLRXhGek9pYWZGSzd3OTd2Y1pDeApQTUd5eVpqanQ0Q3lrbDg1V2tRZEhGa1dvcjBOMkVyWTZydGMxK3huSWJIUml2ZXBteVRydDJ5Y1hmWHB4cmxOCnlVcEQ3U2ErZmt1Nlp0a3RqNEZweVVjN0tvbCtodk13dmtNRExPdEtpWkt5WU95YzZac0FndFFwMGdGeXNaNEYKcTZxQTd3aUloWjdTYWRNTlJYbERmZmNaUW9sOFVNQTh3N01ub0VVT3d5ZUZnc1BBaE4vTkhnY2xxRWXdEd1lEVlIwVEFRSC9CQVV3QXdFQi96QWRCZ05WSFE0RUZnUVUKQVRQS0hnQXNMWTlKNXpqNzhXYm9lNmVjWUZvd0RRWUpLb1pJaHZjTkFRRUxCUUFEZ2dFQkFFZ3U3OWxsWnRLNgpWVTJpUzVTcWwreGFnN3J6NTJJWmhid2ZFc2N3K3doclBqTWxsdGQ2UTh6YUE2KzZRdFRLVWo0bWIwbVlONWhJCm9mdWhna2NaNnZ3Nxxxc3eDNxbWxJWGxNY01jdEUyUlM0SjRTbFVacy9RbHk2VWE4NkwrUFdwcUpLN1BsYzQKVSs1T00xWCtEbWs9Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K\n    server: https://192.168.2.222:6443\n  name: azj-cluster\ncontexts:\n- context:\n    cluster: azj-cluster\n    namespace: devops\n    user: admin\n  name: offline-cluster\ncurrent-context: offline-cluster\nkind: Config\npreferences: {}\nusers:\n- name: admin\n  user:\n    client-certificate-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUQxekNDQXIrZ0F3SUJBZ0lVUW4wWXp6N2FRZkZRZzVmZVdGKzRnaDJUYThFd0RRWUpLb1pJaHZjTkFRRUwKQlFBd1lURUxNQWtHQTFVRUJoTUNRMDR4RVRBUEJnTlZCQWdUQ0VoaGJtZGFhRzkxTVFzd0NRWURWUVFIRXdKWQpVekVNTUFvR0ExVUVDaE1EYXpoek1ROHdEUVlEVlFRTEV3WlRlWE4wWlcweEV6QVJCZ05WQkFNVENtdDFZbVZ5CmJtVjBaWE13SUJjTk1qSXhNVEkxTVRBeE9EQXdXaGdQTWpBM01qRXhNVEl4TURFNE1EQmFNR2N4Q3pBSkJnTlYKQkFZVEFrTk9NUkV3RHdZRFZRUUlFd2hJWVc1bldtaHZkVEVMTUFrR0ExVUVCeE1DV0ZNeEZ6QVZCZ05WQkFvVApEbk41YzNSbGJUcHRZWE4wWlhKek1ROHdEUVlEVlFRTEV3WlRlWE4wWlcweERqQU1CZ05WQkFNVEJXRmtiV2x1Ck1JSUJJakFOQmdrcWhraUc5dzBCQVFFRkFBT0NBUThBxxXMmNzbDd6dGZGcnVGcUVGc3JjYzJoQjkyWDJ5S3ZjZTB4UTI1bHVwTS9SdQp3S1hWbkx0WXRmZVNGWUs0K3U0ZzFRNDRpbFNDcFJ1U3cvR0phenZ3Z0xIeGNtTWZEK004VmtaTnF1cUJUdm82CnZ3SURBUUFCbzM4d2ZUQU9CZ05WSFE4QkFmOEVCQU1DQmFBd0hRWURWUjBsQkJZd0ZBWUlLd1lCQlFVSEF3RUcKQ0NzR0FRVUZCd01DTUF3R0ExVWRFd0VCL3dRQ01BQXdIUVlEVlIwT0JCWUVGT3pwVStxaHUvSnVnUDZDZkFDTApnMW5VMVRXeE1COEdBMVVkSXdRWU1CYUFGQUV6eWg0QUxDMlBTZWM0Ky9GbTZIdW5uR0JhTUEwR0NTcUdTSWIzCkRRRUJDd1VBQTRJQkFRQ0lMRDJpNmNUQWp6Yk5pZW1hNDZhOHd3cWhacHRZdFNDMmdLTHJZRDJaQ2daYVVjU3oKdkg1ayt2SmtjQ29uWW91WkFpTVAyMGxDZElhaWhtYlREdnprcDBNaGZibUppcUlKR2dlcW0vVUsxRWRmNzUvbAo2SGx2MWsrMDdjZXVrcC9Hc2tRMkowRjFBR0ZJdFRncHFJQk5SNWJxR0FNeGcvS0FCdEt4ZUVPbm5EYU9pTGI0CkxiQ3RzWXdVQ09Zb1Z2Skt6V1F4RFVCcTRvcmxhNU81eHVPVWVOSWlHcTZiek1iV3lpbzNQcVJ2Y0JzMU1JaHYKdXBHZlBEQkErdFdrM0hDL0xETkEzdTlGNWpJa3c3ZkJGenlER3d3QUVxMmhLUUFncmlMY05GY2YxbzhPTHJZaQpzTU9YcUFucW1sbkxkWkJVc2ppdnRxZ3M1N2trYnR2R3ZOY3IKLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=\n    client-key-data: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFcFFJQkFBS0NBUUVBMkhiOHI5TEV2UUJoY0YxVHdUaTFsxNxxxphenZ3Z0xIeGNtTWZEK004VmtaTnF1cUJUdm82dndJREFRQUJBb0lCQUVzVGFheHBnNGF4dlJuRgpwS2pkVEU0bkRuUjVGbGVNVDQ0VnhFRXVnWXIweTdxSTlsZkFKMDBFdURoSWNOMWRDam0yUGYzZEJnbkJyYmt1CkhMdHlSK2IydkdmR1N6ZlRlSEp1SG5LYzZPS2VLajdncno0Qm5zVUd1NEpIaHJYSzBHMjk4NWhMeXcrSFlIbkkKYkpKc2laNnlyS3dNdklBeDZLQkdsR25pT1JlY1hXaXFrK1hHcEx4NldkRkpWOXhSTXoxVWhrblQ4TnVFeW1OSApHTlMwaE5LaDBTMHdnenh4YTB5Nmhoc2YxNW4zODBlUFkvRkI3WUd1WHIvb1lreFNFQ21LbGF4M3Ribk94dkF2CnJvN2M3Um5rbXFXTUZGTTlRV3dVVEpsckYvY0JKTkhPTkxBRm5VcWZabG9TS2NzY0xwWjVqUGZUWGdkWVRLWnkKcCtRWjJrRUNnWUVBMzRZZVV2T3U5eVhud21FNnhPc2dNc2hWZjArRk40TFhEblBET0hDb2xtOTh4OUFlUmZFSwpuVkZ3OHp6cXY2STA3L1M1WXczQVVmZ2tmaUVUOVRzZUZQN1VWN2VseHEveUliWE54VHZmOTdGMk9lc3BoWkJUCjVaZ3lQTnkyVXViVEtucjA1ckRadk1OZldSRFZjR1FBc0ppcURhUjNueWFtV2szSG8zS2xNTzhDZ1lFQTkrcE8KMW1lZXUrRnNEZnBjc2poUGc4UFBtMUdCQWRuNVpOSGJFRkhrRzFBK2dZbGZOam9EK2hkV3BPU0dwek5QbUlYaApqa0VKWnpZcGM1QTBtU200b0hOMitSdFhSQ21vNlNvVkg3NjhnUkxuN1RZQ25FS3pvd09MdC81VFhCdnh6ZnpIClQyTlpPWlY2WG1EV09qbHBsTXQ4UVlwcFVXenBsZnp3UDV5bjh6RUNnWUVBMmVTVi91c0pibWVIQ3hkWkFNanIKOxjY0dxxmFORkpobW9TUnE5TnF5ZXJXd3AwZVZqaVpXNjh5akRXdE1sN205MjB1OEk4NFlDQzBzUE0wemJCdGx3bAprQThnMWZNVWNSakR3N3piZWFLcW9SMDVQRlVsOEEyWXR6UWVzT1ZtRGROa2txMW9FeDNxU3pBaENncjNTcmdNCnYwZnNlZEVDZ1lFQWtQUGdHZFNUZ1VaWkNITnZjNURUS094eFRyYWF5UGkvemxHY2xWR1FsY2ZrV3NTbUhVWXoKeU5jMFlSRDZHTG42dUFHcU5vTVF0MGZLMzJMUERXT1NHSzc0RWhkS0hGV1pqOTRoUTY4SzZJb1RWVmxDMGhuVApteTcvZW96RkkvYVFuVjlNQ3FSdlRrc1Myb2Z4OVA5a1dVWVZWQVlnYUNaeGR1RENyNm1VZmlRPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=', '2023-10-10 17:50:11');
-COMMIT;
-
--- ----------------------------
 -- Table structure for permission
 -- ----------------------------
 DROP TABLE IF EXISTS `permission`;
@@ -200,7 +181,7 @@ CREATE TABLE `permission` (
                               `keep_alive` bit(1) NOT NULL COMMENT '页面缓存',
                               `parent_id` int(11) NOT NULL COMMENT '父级权限 id',
                               PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=67 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=68 DEFAULT CHARSET=utf8mb4;
 
 -- ----------------------------
 -- Records of permission
@@ -251,11 +232,11 @@ INSERT INTO `permission` (`id`, `title`, `name`, `type`, `f_route`, `b_routes`, 
 INSERT INTO `permission` (`id`, `title`, `name`, `type`, `f_route`, `b_routes`, `redirect`, `icon`, `rank`, `show_link`, `show_parent`, `keep_alive`, `parent_id`) VALUES (48, '文件管理器删除文件', 'host-terminal-sftp-del', 3, '', '[]', '', '', 9, b'0', b'0', b'0', 34);
 INSERT INTO `permission` (`id`, `title`, `name`, `type`, `f_route`, `b_routes`, `redirect`, `icon`, `rank`, `show_link`, `show_parent`, `keep_alive`, `parent_id`) VALUES (49, '回放终端会话记录', 'host-terminal-session-replay', 3, '', '[\"get:/host-terminal-session/:id/check-file\", \"get:/host-terminal-session/:id/replay\"]', '', '', 11, b'0', b'0', b'0', 34);
 INSERT INTO `permission` (`id`, `title`, `name`, `type`, `f_route`, `b_routes`, `redirect`, `icon`, `rank`, `show_link`, `show_parent`, `keep_alive`, `parent_id`) VALUES (50, '流水线', 'ci-pipeline-manage', 2, '/ci/ci-pipeline', '[]', '', 'fa-solid:grip-lines-vertical', 1, b'1', b'1', b'1', 56);
-INSERT INTO `permission` (`id`, `title`, `name`, `type`, `f_route`, `b_routes`, `redirect`, `icon`, `rank`, `show_link`, `show_parent`, `keep_alive`, `parent_id`) VALUES (51, 'Kubernetes Config', 'kubernetes-config-manage', 2, '/resource/kubernetes-config', '[]', '', 'fa-solid:file-signature', 3, b'1', b'0', b'0', 32);
-INSERT INTO `permission` (`id`, `title`, `name`, `type`, `f_route`, `b_routes`, `redirect`, `icon`, `rank`, `show_link`, `show_parent`, `keep_alive`, `parent_id`) VALUES (52, '查询 Kubernetes Config', 'kubernetes-config-read', 3, '', '[\"get:/kubernetes-config/page-list\"]', '', '', 1, b'0', b'0', b'0', 51);
-INSERT INTO `permission` (`id`, `title`, `name`, `type`, `f_route`, `b_routes`, `redirect`, `icon`, `rank`, `show_link`, `show_parent`, `keep_alive`, `parent_id`) VALUES (53, '新增 Kubernetes Config', 'kubernetes-config-add', 3, '', '[\"post:/kubernetes-config\"]', '', '', 2, b'0', b'0', b'0', 51);
-INSERT INTO `permission` (`id`, `title`, `name`, `type`, `f_route`, `b_routes`, `redirect`, `icon`, `rank`, `show_link`, `show_parent`, `keep_alive`, `parent_id`) VALUES (54, '更新 Kubernetes Config', 'kubernetes-config-upt', 3, '', '[\"put:/kubernetes-config/:id\"]', '', '', 3, b'0', b'0', b'0', 51);
-INSERT INTO `permission` (`id`, `title`, `name`, `type`, `f_route`, `b_routes`, `redirect`, `icon`, `rank`, `show_link`, `show_parent`, `keep_alive`, `parent_id`) VALUES (55, '删除 Kubernetes Config', 'kubernetes-config-del', 3, '', '[\"delete:/kubernetes-config/:id\"]', '', '', 4, b'0', b'0', b'0', 51);
+INSERT INTO `permission` (`id`, `title`, `name`, `type`, `f_route`, `b_routes`, `redirect`, `icon`, `rank`, `show_link`, `show_parent`, `keep_alive`, `parent_id`) VALUES (51, '秘钥管理', 'secret-manage', 2, '/resource/secret', '[]', '', 'fa-solid:key', 3, b'1', b'0', b'0', 32);
+INSERT INTO `permission` (`id`, `title`, `name`, `type`, `f_route`, `b_routes`, `redirect`, `icon`, `rank`, `show_link`, `show_parent`, `keep_alive`, `parent_id`) VALUES (52, '查询秘钥', 'secret-read', 3, '', '[\"get:/secret/page-list\"]', '', '', 1, b'0', b'0', b'0', 51);
+INSERT INTO `permission` (`id`, `title`, `name`, `type`, `f_route`, `b_routes`, `redirect`, `icon`, `rank`, `show_link`, `show_parent`, `keep_alive`, `parent_id`) VALUES (53, '新增秘钥', 'secret-add', 3, '', '[\"post:/secret\"]', '', '', 2, b'0', b'0', b'0', 51);
+INSERT INTO `permission` (`id`, `title`, `name`, `type`, `f_route`, `b_routes`, `redirect`, `icon`, `rank`, `show_link`, `show_parent`, `keep_alive`, `parent_id`) VALUES (54, '更新秘钥', 'secret-upt', 3, '', '[\"put:/secret/:id\"]', '', '', 3, b'0', b'0', b'0', 51);
+INSERT INTO `permission` (`id`, `title`, `name`, `type`, `f_route`, `b_routes`, `redirect`, `icon`, `rank`, `show_link`, `show_parent`, `keep_alive`, `parent_id`) VALUES (55, '删除秘钥', 'secret-del', 3, '', '[\"delete:/secret/:id\"]', '', '', 4, b'0', b'0', b'0', 51);
 INSERT INTO `permission` (`id`, `title`, `name`, `type`, `f_route`, `b_routes`, `redirect`, `icon`, `rank`, `show_link`, `show_parent`, `keep_alive`, `parent_id`) VALUES (56, '持续集成', 'ci-manage', 1, '/ci', '[]', '/ci/ci-pipeline', 'fa-solid:smoking', 1, b'1', b'0', b'0', 0);
 INSERT INTO `permission` (`id`, `title`, `name`, `type`, `f_route`, `b_routes`, `redirect`, `icon`, `rank`, `show_link`, `show_parent`, `keep_alive`, `parent_id`) VALUES (57, '构建环境', 'ci-env-manage', 2, '/ci/ci-env', '[]', '', 'fa-solid:boxes', 1, b'1', b'1', b'1', 56);
 INSERT INTO `permission` (`id`, `title`, `name`, `type`, `f_route`, `b_routes`, `redirect`, `icon`, `rank`, `show_link`, `show_parent`, `keep_alive`, `parent_id`) VALUES (58, '查询构建环境', 'ci-env-read', 3, '', '[\"get:/ci-env/page-list\"]', '', '', 1, b'0', b'0', b'0', 57);
@@ -266,7 +247,8 @@ INSERT INTO `permission` (`id`, `title`, `name`, `type`, `f_route`, `b_routes`, 
 INSERT INTO `permission` (`id`, `title`, `name`, `type`, `f_route`, `b_routes`, `redirect`, `icon`, `rank`, `show_link`, `show_parent`, `keep_alive`, `parent_id`) VALUES (63, '新增流水线', 'ci-pipeline-add', 3, '', '[\"post:/ci-pipeline\"]', '', '', 2, b'0', b'0', b'0', 50);
 INSERT INTO `permission` (`id`, `title`, `name`, `type`, `f_route`, `b_routes`, `redirect`, `icon`, `rank`, `show_link`, `show_parent`, `keep_alive`, `parent_id`) VALUES (64, '更新流水线', 'ci-pipeline-upt', 3, '', '[\"put:/ci-pipeline/:id\"]', '', '', 3, b'0', b'0', b'0', 50);
 INSERT INTO `permission` (`id`, `title`, `name`, `type`, `f_route`, `b_routes`, `redirect`, `icon`, `rank`, `show_link`, `show_parent`, `keep_alive`, `parent_id`) VALUES (65, '删除流水线', 'ci-pipeline-del', 3, '', '[\"delete:/ci-pipeline/:id\"]', '', '', 4, b'0', b'0', b'0', 50);
-INSERT INTO `permission` (`id`, `title`, `name`, `type`, `f_route`, `b_routes`, `redirect`, `icon`, `rank`, `show_link`, `show_parent`, `keep_alive`, `parent_id`) VALUES (66, '编排流水线', 'ci-pipeline-arrange', 3, '', '[]', '', '', 5, b'0', b'0', b'0', 50);
+INSERT INTO `permission` (`id`, `title`, `name`, `type`, `f_route`, `b_routes`, `redirect`, `icon`, `rank`, `show_link`, `show_parent`, `keep_alive`, `parent_id`) VALUES (66, '编排流水线', 'ci-pipeline-arrange', 3, '', '[\"get:/ci-pipeline/:id/config\", \"patch:/ci-pipeline/:id/config\", \"get:/secret/list\"]', '', '', 5, b'0', b'0', b'0', 50);
+INSERT INTO `permission` (`id`, `title`, `name`, `type`, `f_route`, `b_routes`, `redirect`, `icon`, `rank`, `show_link`, `show_parent`, `keep_alive`, `parent_id`) VALUES (67, '运行流水线', 'ci-pipeline-run', 3, '', '[\"post:/ci-pipeline/:id/run\"]', '', '', 6, b'0', b'0', b'0', 50);
 COMMIT;
 
 -- ----------------------------
@@ -288,6 +270,27 @@ CREATE TABLE `role` (
 BEGIN;
 INSERT INTO `role` (`id`, `name`, `code`, `permission`, `updated_at`) VALUES (1, '管理员', 'admin', '[25, 56, 57, 32, 34, 39, 40, 41, 42, 44, 45, 46, 47, 48, 43, 49, 33, 35, 36, 37, 38, 51, 52, 53, 54, 55, 50, 1, 3, 11, 4, 6, 10, 8, 9, 5, 20, 21, 22, 23, 24, 2, 14, 15, 16, 17, 18, 27, 28, 29, 30, 31]', '2023-10-09 15:55:05');
 INSERT INTO `role` (`id`, `name`, `code`, `permission`, `updated_at`) VALUES (2, '测试', 'test', '[25, 56, 50, 62, 63, 64, 65, 57, 58, 59, 60, 61]', '2023-10-09 18:18:59');
+COMMIT;
+
+-- ----------------------------
+-- Table structure for secret
+-- ----------------------------
+DROP TABLE IF EXISTS `secret`;
+CREATE TABLE `secret` (
+                          `id` int(11) NOT NULL AUTO_INCREMENT,
+                          `name` varchar(128) NOT NULL COMMENT '名称',
+                          `type` tinyint(4) NOT NULL COMMENT '类型:1-git认证,2-Kubernetes config',
+                          `content` json NOT NULL COMMENT '认证配置内容',
+                          `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+                          PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4;
+
+-- ----------------------------
+-- Records of secret
+-- ----------------------------
+BEGIN;
+INSERT INTO `secret` (`id`, `name`, `type`, `content`, `updated_at`) VALUES (1, '线下集群', 2, '{\"text\": \"apiVersion: v1\\nclusters:\\n- cluster:\\n    certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSxxMnM0Y3pFUE1BMEdBMVVFQ3hNR1UzbHpkR1Z0TVJNd0VRWURWUVFERXdwcmRXSmxjbTVsZEdWek1JSUJJakFOCkJna3Foa2lHOXcwQkFRRUZBQU9DQVE4QU1JSUJDZ0tDQVFFQXhNQTZWc3VNc1lXRDl2dVM5RmlKaU5CZGo3WEYKbm0rT0tlZWllNFc4aStCaFBYUHorWlBTcUptSkNXNHlPTjQ4MW02ZHRJU1hLRXhGek9pYWZGSzd3OTd2Y1pDeApQTUd5eVpqanQ0Q3lrbDg1V2tRZEhGa1dvcjBOMkVyWTZydGMxK3huSWJIUml2ZXBteVRydDJ5Y1hmWHB4cmxOCnlVcEQ3U2ErZmt1Nlp0a3RqNEZweVVjN0tvbCtodk13dmtNRExPdEtpWkt5WU95YzZac0FndFFwMGdGeXNaNEYKcTZxQTd3aUloWjdTYWRNTlJYbERmZmNaUW9sOFVNQTh3N01ub0VVT3d5ZUZnc1BBaE4vTkhnY29pSnd4cnFmcgp1K2U1VE9RWVJFRk5CUTVyTFFSL3FKYUt0MUVkV0hrZWkvRVJWbk5JZ3JFbVNzbWhtS3VDK01tUXd3SURBUUFCCm8wSXdRREFPQmdOVkhROEJBZjhFQkFNQ0FRWXdEd1lEVlIwVEFRSC9CQVV3QXdFQi96QWRCZ05WSFE0RUZnUVUKQVRQS0hnQXNMWTlKNXpqNzhXYm9lNmVjWUZvd0RRWUpLb1pJaHZjTkFRRUxCUUFEZ2dFQkFFZ3U3OWxsWnRLNgpWVTJpUzVTcWwreGFnN3J6NTJJWmhid2ZFc2N3K3doclBqTWxsdGQ2UTh6YUE2KzZRdFRLVWo0bWIwbVlONWhJCm9mdWhna2NaNnZ3NkxRVkNVZ25kZmFULzcrVEtFQXJkV2o2emRYanFveWRnenR5SDEyQXhtM05rcXI3N2E1dCsKUWMwV2ZULzltNHNMdXZCa0tNdWhqMkg3VUZzMXN2QVdkUmltRk1PeEhJUjZVQ0RMMkZ5M0htM2VPS1F1OXFoOAo0QnhKMTczVnZmZmpZUHp2UlhuR0NrWm52Mkt5MG5hWFRkRHoyK0FtU2NiNGs1ZUR3MUJ6M1J2czdxRitOTktqCndRaTJmTFpOREZxTGxOWXc3eDNxbWxJWGxNY01jdEUyUlM0SjRTbFVacy9RbHk2VWE4NkwrUFdwcUpLN1BsYzQKVSs1T00xWCtEbWs9Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K\\n    server: https://192.168.2.2:7443\\n  name: azj-cluster\\ncontexts:\\n- context:\\n    cluster: azj-cluster\\n    namespace: devops\\n    user: admin\\n  name: offline-cluster\\ncurrent-context: offline-cluster\\nkind: Config\\npreferences: {}\\nusers:\\n- name: admin\\n  user:\\n    client-certificate-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUQxekNDQXIrZ0F3SUJBZ0lVUW4wWXp6N2FRZkZxxkx0WXRmZVNGWUs0K3U0ZzFRNDRpbFNDcFJ1U3cvR0phenZ3Z0xIeGNtTWZEK004VmtaTnF1cUJUdm82CnZ3SURBUUFCbzM4d2ZUQU9CZ05WSFE4QkFmOEVCQU1DQmFBd0hRWURWUjBsQkJZd0ZBWUlLd1lCQlFVSEF3RUcKQ0NzR0FRVUZCd01DTUF3R0ExVWRFd0VCL3dRQ01BQXdIUVlEVlIwT0JCWUVGT3pwVStxaHUvSnVnUDZDZkFDTApnMW5VMVRXeE1COEdBMVVkSXdRWU1CYUFGQUV6eWg0QUxDMlBTZWM0Ky9GbTZIdW5uR0JhTUEwR0NTcUdTSWIzCkRRRUJDd1VBQTRJQkFRQ0lMRDJpNmNUQWp6Yk5pZW1hNDZhOHd3cWhacHRZdFNDMmdLTHJZRDJaQ2daYVVjU3oKdkg1ayt2SmtjQ29uWW91WkFpTVAyMGxDZElhaWhtYlREdnprcDBNaGZibUppcUlKR2dlcW0vVUsxRWRmNzUvbAo2SGx2MWsrMDdjZXVrcC9Hc2tRMkowRjFBR0ZJdFRncHFJQk5SNWJxR0FNeGcvS0FCdEt4ZUVPbm5EYU9pTGI0CkxiQ3RzWXdVQ09Zb1Z2Skt6V1F4RFVCcTRvcmxhNU81eHVPVWVOSWlHcTZiek1iV3lpbzNQcVJ2Y0JzMU1JaHYKdXBHZlBEQkErdFdrM0hDL0xETkEzdTlGNWpJa3c3ZkJGenlER3d3QUVxMmhLUUFncmlMY05GY2YxbzhPTHJZaQpzTU9YcUFucW1sbkxkWkJVc2ppdnRxZ3M1N2trYnR2R3ZOY3IKLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=\\n    client-key-data: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFcFFJQkFBS0NBUUVBMkhiOHI5TEV2UUJoY0YxVHdUaTFsNzdvb3M3RTFVeWt1MkZic0VxaWJJSVhYNnczClBYUmdwWStvWTB5SUJ5ODdIV2FaY1luM1liQmp4aksvbmlPVkoyMHNTbDBuUFl2L2I0MDRrYnMvUktzL1BZRXAKxxYzZPS2VLajdncno0Qm5zVUd1NEpIaHJYSzBHMjk4NWhMeXcrSFlIbkkKYkpKc2laNnlyS3dNdklBeDZLQkdsR25pT1JlY1hXaXFrK1hHcEx4NldkRkpWOXhSTXoxVWhrblQ4TnVFeW1OSApHTlMwaE5LaDBTMHdnenh4YTB5Nmhoc2YxNW4zODBlUFkvRkI3WUd1WHIvb1lreFNFQ21LbGF4M3Ribk94dkF2CnJvN2M3Um5rbXFXTUZGTTlRV3dVVEpsckYvY0JKTkhPTkxBRm5VcWZabG9TS2NzY0xwWjVqUGZUWGdkWVRLWnkKcCtRxxApqa0VKWnpZcGM1QTBtU200b0hOMitSdFhSQ21vNlNvVkg3NjhnUkxuN1RZQ25FS3pvd09MdC81VFhCdnh6ZnpIClQyTlpPWlY2WG1EV09qbHBsTXQ4UVlwcFVXenBsZnp3UDV5bjh6RUNnWUVBMmVTVi91c0pibWVIQ3hkWkFNanIKOUZVUjh5OERmOStONE1xOFRYS1ZCVURjOUxOT0w0UVBndGYzTVVYNjJLQTQxb2xMaHVIS3pwMEVoZWVjMnxxFHcU5vTVF0MGZLMzJMUERXT1NHSzc0RWhkS0hGV1pqOTRoUTY4SzZJb1RWVmxDMGhuVApteTcvZW96RkkvYVFuVjlNQ3FSdlRrc1Myb2Z4OVA5a1dVWVZWQVlnYUNaeGR1RENyNm1VZmlRPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=\"}', '2023-10-13 15:48:39');
+INSERT INTO `secret` (`id`, `name`, `type`, `content`, `updated_at`) VALUES (2, '线下 BitBucket', 1, '{\"password\": \"123456\", \"username\": \"zhangzhongen\"}', '2023-10-13 15:48:15');
 COMMIT;
 
 -- ----------------------------
