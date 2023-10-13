@@ -56,7 +56,7 @@ func (*sSecret) GetPageLst(ctx context.Context, in *api.PageLstReq) (out *api.Pa
 		m = m.WhereOr(m.Builder().WhereOrLike(cols.Name, in.SearchStr()))
 	}
 
-	if typeV := in.Wheres.Get("type"); !typeV.IsNil() {
+	if typeV := in.Wheres.Get("type"); !typeV.IsNil() && typeV.Int() > 0 {
 		m = m.Where(cols.Type, typeV.Int())
 	}
 
