@@ -16,11 +16,9 @@ import (
 	"github.com/gogf/gf/v2/os/glog"
 	"github.com/gogf/gf/v2/os/gtime"
 	"github.com/gogf/gf/v2/util/gutil"
-	"io"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
-	"os"
 	"time"
 )
 
@@ -34,7 +32,6 @@ func (s *sCiPipeline) Run(ctx context.Context, id int) (err error) {
 		kubeNamespace    = consts.CI_CLIENT_POD_NAMESPACE
 		envMap           map[int]*entity.CiEnv
 		now              = gtime.Now()
-		ciPodName        = fmt.Sprintf("ci-pod-%d-%s", id, time.Now().Format("20060102150405"))
 	)
 	// 获取 Pipeline 信息
 	ePipeline, err = s.Get(ctx, &do.CiPipeline{Id: id})
@@ -98,6 +95,8 @@ func (s *sCiPipeline) Run(ctx context.Context, id int) (err error) {
 		kubeNamespace = ePipeline.KubernetesNamespace
 	}
 
+	ciPodName := fmt.Sprintf("ci-%s-%d-%s", ePipeline.Name, id, time.Now().Format("20060102150405"))
+
 	// 创建 ci pod
 	if err = createCiPod(kubeClient, kubeNamespace, ciPodName, config); err != nil {
 		return
@@ -147,11 +146,11 @@ func watchCiPod(ctx context.Context, kubeClient *kubernetes.Client, namespace, n
 	}
 	defer watcher.Stop()
 
-	var (
-		watchIndex = 0
-		logIndex   = 0
-		maxIndex   = len(ciConfig) - 1
-	)
+	//var (
+	//	watchIndex = 0
+	//	logIndex   = 0
+	//	maxIndex   = len(ciConfig) - 1
+	//)
 WATCH:
 	for event := range watcher.ResultChan() {
 		switch event.Type {
@@ -179,98 +178,96 @@ WATCH:
 				break WATCH
 			}
 			//glog.Printf(ctx, "Pod '%s' modified in namespace '%s'", pod.Name, pod.Namespace)
-			if watchIndex != maxIndex {
-				for _, status := range pod.Status.InitContainerStatuses {
-					if containerName := fmt.Sprintf("env-%d", watchIndex); status.Name == containerName {
-						if status.Ready {
-							glog.Debugf(ctx, "%s 已完成\n", containerName)
-							watchIndex++
-						} else {
-							if status.State.Running != nil {
-								glog.Debugf(ctx, "%s 开始运行了\n", containerName)
-							}
-							if status.State.Terminated != nil && status.State.Terminated.ExitCode != 0 {
-								glog.Debugf(ctx, "%s 执行失败\n", containerName)
-							}
-						}
-					}
-
-					if containerName := fmt.Sprintf("env-%d", logIndex); status.Name == containerName {
-						if status.Ready {
-							tailLog(ctx, kubeClient, namespace, name, logIndex, false) // 打印所有日志
-							logIndex++
-						} else {
-							if status.State.Running != nil {
-								tailLog(ctx, kubeClient, namespace, name, logIndex, true) // 跟踪打印日志
-								logIndex++
-							}
-						}
-					}
-				}
-			} else {
-				for _, status := range pod.Status.ContainerStatuses {
-					if containerName := fmt.Sprintf("env-%d", watchIndex); status.Name == containerName {
-						if terminalState := status.State.Terminated; terminalState != nil {
-							if terminalState.ExitCode == 0 && terminalState.Reason == "Completed" {
-								glog.Debugf(ctx, "%s 已完成\n", containerName)
-							} else if terminalState.ExitCode > 0 {
-								glog.Debugf(ctx, "%s 执行失败\n", containerName)
-							}
-						} else {
-							if status.State.Running != nil {
-								glog.Debugf(ctx, "%s 开始运行了\n", containerName)
-							}
-						}
-					}
-
-					if containerName := fmt.Sprintf("env-%d", logIndex); status.Name == containerName {
-						if terminalState := status.State.Terminated; terminalState != nil {
-							tailLog(ctx, kubeClient, namespace, name, logIndex, false) // 打印所有日志
-							logIndex++
-						} else {
-							if status.State.Running != nil {
-								tailLog(ctx, kubeClient, namespace, name, logIndex, true) // 跟踪打印日志
-								logIndex++
-							}
-						}
-					}
-				}
-			}
+			//if watchIndex != maxIndex {
+			//	for _, status := range pod.Status.InitContainerStatuses {
+			//		if containerName := fmt.Sprintf("env-%d", watchIndex); status.Name == containerName {
+			//			if status.Ready {
+			//				glog.Debugf(ctx, "%s 已完成\n", containerName)
+			//				watchIndex++
+			//			} else {
+			//				if status.State.Running != nil {
+			//					glog.Debugf(ctx, "%s 开始运行了\n", containerName)
+			//				}
+			//				if status.State.Terminated != nil && status.State.Terminated.ExitCode != 0 {
+			//					glog.Debugf(ctx, "%s 执行失败\n", containerName)
+			//				}
+			//			}
+			//		}
+			//
+			//		if containerName := fmt.Sprintf("env-%d", logIndex); status.Name == containerName {
+			//			if status.Ready {
+			//				tailLog(ctx, kubeClient, namespace, name, logIndex, false) // 打印所有日志
+			//				logIndex++
+			//			} else {
+			//				if status.State.Running != nil {
+			//					tailLog(ctx, kubeClient, namespace, name, logIndex, true) // 跟踪打印日志
+			//					logIndex++
+			//				}
+			//			}
+			//		}
+			//	}
+			//} else {
+			//	for _, status := range pod.Status.ContainerStatuses {
+			//		if containerName := fmt.Sprintf("env-%d", watchIndex); status.Name == containerName {
+			//			if terminalState := status.State.Terminated; terminalState != nil {
+			//				if terminalState.ExitCode == 0 && terminalState.Reason == "Completed" {
+			//					glog.Debugf(ctx, "%s 已完成\n", containerName)
+			//				} else if terminalState.ExitCode > 0 {
+			//					glog.Debugf(ctx, "%s 执行失败\n", containerName)
+			//				}
+			//			} else {
+			//				if status.State.Running != nil {
+			//					glog.Debugf(ctx, "%s 开始运行了\n", containerName)
+			//				}
+			//			}
+			//		}
+			//
+			//		if containerName := fmt.Sprintf("env-%d", logIndex); status.Name == containerName {
+			//			if terminalState := status.State.Terminated; terminalState != nil {
+			//				tailLog(ctx, kubeClient, namespace, name, logIndex, false) // 打印所有日志
+			//				logIndex++
+			//			} else {
+			//				if status.State.Running != nil {
+			//					tailLog(ctx, kubeClient, namespace, name, logIndex, true) // 跟踪打印日志
+			//					logIndex++
+			//				}
+			//			}
+			//		}
+			//	}
+			//}
 		case watch.Error:
 			//err := event.Object.(error)
 			glog.Errorf(ctx, "Received watch error: %v", event.Object)
 			break WATCH
 		}
 	}
-
-	glog.Debug(ctx, "ci 监听协程结束了")
 }
 
 // 获取 Pod 日志
-func tailLog(ctx context.Context, kubeClient *kubernetes.Client, namespace, podName string, logIndex int, follow bool) {
-	line := int64(100000)
-	req := kubeClient.CoreV1().Pods(namespace).GetLogs(podName, &corev1.PodLogOptions{
-		Container: fmt.Sprintf("env-%d", logIndex),
-		Follow:    follow,
-		TailLines: &line,
-	})
-	stream, err := req.Stream(ctx)
-	if err != nil {
-		glog.Error(ctx, err)
-		return
-	}
+//func tailLog(ctx context.Context, kubeClient *kubernetes.Client, namespace, podName string, logIndex int, follow bool) {
+//	line := int64(100000)
+//req := kubeClient.CoreV1().Pods(namespace).GetLogs(podName, &corev1.PodLogOptions{
+//	Container: fmt.Sprintf("env-%d", logIndex),
+//	Follow:    follow,
+//	TailLines: &line,
+//})
+//stream, err := req.Stream(ctx)
+//if err != nil {
+//	glog.Error(ctx, err)
+//	return
+//}
+//
+//if _, err = io.Copy(os.Stdout, stream); err != nil {
+//	glog.Error(ctx, err)
+//	return
+//}
 
-	if _, err = io.Copy(os.Stdout, stream); err != nil {
-		glog.Error(ctx, err)
-		return
-	}
-
-	//defer stream.Close()
-	//scanner := bufio.NewScanner(stream)
-	//for scanner.Scan() {
-	//	fmt.Println(scanner.Text())
-	//}
-}
+//defer stream.Close()
+//scanner := bufio.NewScanner(stream)
+//for scanner.Scan() {
+//	fmt.Println(scanner.Text())
+//}
+//}
 
 // 创建 ci pod
 func createCiPod(kubeClient *kubernetes.Client, namespace, name string, ciConfig mid.CiPipelineConfig) error {

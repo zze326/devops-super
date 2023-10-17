@@ -4,6 +4,7 @@ import (
 	"context"
 	"devops-super/internal/controller/ci_env"
 	"devops-super/internal/controller/ci_pipeline"
+	"devops-super/internal/controller/ci_pipeline_run"
 	"devops-super/internal/controller/dept"
 	"devops-super/internal/controller/host"
 	"devops-super/internal/controller/host_group"
@@ -49,8 +50,9 @@ var (
 						host_terminal_session.NewV1(), // 主机会话
 						secret.NewV1(),                // 秘钥管理
 						// 持续集成
-						ci_env.NewV1(),      // ci 环境
-						ci_pipeline.NewV1(), // ci 流水线
+						ci_env.NewV1(),          // ci 环境
+						ci_pipeline.NewV1(),     // ci 流水线
+						ci_pipeline_run.NewV1(), // ci 流水线运行记录
 					)
 				})
 			})

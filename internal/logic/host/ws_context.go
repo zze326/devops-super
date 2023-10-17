@@ -83,7 +83,7 @@ func (s *wsContext) Read(p []byte) (n int, err error) {
 	if xtermMsg.MsgType == "input" {
 		if cmdStr := strings.TrimSpace(s.readBuffer.String()); xtermMsg.Input == "\r" && len(cmdStr) > 0 {
 			s.hasInput = true
-			glog.Infof(s.ctx, "输入命令：%s", cmdStr)
+			glog.Debugf(s.ctx, "输入命令：%s", cmdStr)
 			s.readBuffer.Reset()
 		}
 		if !util.InSlice[string]([]string{"\t", "\r", ""}, xtermMsg.Input) {
