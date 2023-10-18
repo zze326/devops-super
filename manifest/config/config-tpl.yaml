@@ -1,0 +1,31 @@
+server:
+  address: ":{{SERVER_PORT}}"
+  openapiPath: "/api.json"
+  swaggerPath: "/swagger"
+  accessLogEnabled: true
+  serverRoot: /app/dist
+
+
+logger:
+  level: "all"
+  stdout: true
+
+database:
+  logger:
+    level: "all"
+    stdout: "true"
+  default:
+    type: mysql
+    link: "mysql:{{DB_USER}}:{{DB_PWD}}@tcp({{DB_HOST}}:{{DB_PORT}})/{{DB_NAME}}?loc=Local&parseTime=true"
+    charset: utf8mb4
+    maxIdle: "10"
+    maxOpen: "300"
+    debug: true
+
+jwt:
+  secret: {{JWT_SECRET}}
+  expire: 8h
+
+host:
+  terminal:
+    sessionFileDir: host-sessions # 离线会话文件保存目录，相对当前运行工作目录

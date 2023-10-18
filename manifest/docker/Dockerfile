@@ -5,13 +5,16 @@ FROM loads/alpine:3.8
 ###############################################################################
 
 ENV WORKDIR                 /app
-ADD resource                $WORKDIR/
-ADD manifest/config        $WORKDIR/config
-ADD ./temp/linux_amd64/main $WORKDIR/main
+COPY resource                $WORKDIR/
+COPY manifest/config/config-tpl.yaml        $WORKDIR/config/config-tpl.yaml
+COPY manifest/docker/entrypoint.sh        $WORKDIR/entrypoint.sh
+COPY ./temp/linux_amd64/main $WORKDIR/main
 RUN chmod +x $WORKDIR/main
+RUN chmod +x $WORKDIR/entrypoint.sh
+
 
 ###############################################################################
 #                                   START
 ###############################################################################
 WORKDIR $WORKDIR
-CMD ./main --gf.gcfg.file=config-demo.yaml
+ENTRYPOINT ["./entrypoint.sh"]
