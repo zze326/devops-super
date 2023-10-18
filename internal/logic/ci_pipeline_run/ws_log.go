@@ -85,7 +85,7 @@ WATCH:
 			podInfo = event.Object.(*corev1.Pod)
 			podFinished = podInfo.Status.Phase == corev1.PodFailed || podInfo.Status.Phase == corev1.PodSucceeded // pod 是否已经运行结束
 			allContainerStatus := append(podInfo.Status.InitContainerStatuses, podInfo.Status.ContainerStatuses...)
-			if podFinished {
+			if podFinished { // 如果容器已经运行结束，直接输出所有日志
 				for idx, status := range allContainerStatus {
 					if status.Ready || status.State.Terminated != nil {
 						if err = wsCtx.tailLog(idx); err != nil {
@@ -95,25 +95,16 @@ WATCH:
 				}
 				break WATCH
 			} else {
-				// 创建 pod 监听
-				watcher, err := wsCtx.kubeClient.CoreV1().Pods(eCiPipelineRun.Namespace).Watch(wsCtx.ctx, metav1.ListOptions{
-					FieldSelector: fmt.Sprintf("metadata.name=%s", eCiPipelineRun.PodName),
-				})
-				if err != nil {
-					return gerror.Wrap(err, "Failed to create watcher")
-				}
-				defer watcher.Stop()
-				wsCtx.watcher = watcher
-				// 把已经运行完毕和正在运行的容器的日志先获取到
+				// 把已经运行完毕和正在运行的容器的日志先输出
 				for idx, containerStatus := range allContainerStatus {
 					if containerStatus.Ready {
-						logIndex = idx + 1
 						if err = wsCtx.tailLog(idx); err != nil {
 							return err
 						}
+						logIndex++
 					} else {
 						if containerStatus.State.Running != nil {
-							logIndex = idx + 1
+							logIndex++
 							if err = wsCtx.tailLog(idx); err != nil {
 								return err
 							}
@@ -121,9 +112,14 @@ WATCH:
 						}
 					}
 				}
+				// 如果发现所有容器的日志已经输出完，则终端输出
+				if logIndex > len(allContainerStatus)-1 {
+					break WATCH
+				}
 			}
-		case watch.Modified:
+		case watch.Modified: // 监听 pod 变化
 			podInfo = event.Object.(*corev1.Pod)
+			// 如果 Pod 运行失败了，直接输出当前容器的日志然后中断
 			if podInfo.Status.Phase == corev1.PodFailed {
 				if err := wsCtx.tailLog(logIndex); err != nil {
 					return err
@@ -132,7 +128,7 @@ WATCH:
 			}
 			for _, status := range append(podInfo.Status.InitContainerStatuses, podInfo.Status.ContainerStatuses...) {
 				if containerName := fmt.Sprintf("env-%d", logIndex); status.Name == containerName {
-					canLog := status.Ready || status.State.Running != nil
+					canLog := status.Ready || status.State.Running != nil || status.State.Terminated != nil
 					if !canLog {
 						continue
 					}
@@ -140,10 +136,10 @@ WATCH:
 						return err
 					}
 
-					if logIndex == len(podInfo.Status.InitContainerStatuses)+len(podInfo.Status.ContainerStatuses)-1 { // 最后一个容器日志获取完毕才终止监听
+					// 最后一个容器日志获取完毕才终止监听
+					if logIndex == len(podInfo.Status.InitContainerStatuses)+len(podInfo.Status.ContainerStatuses)-1 {
 						break WATCH
 					}
-
 					logIndex++
 				}
 			}
