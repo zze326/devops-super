@@ -3,7 +3,7 @@ package tests
 import (
 	"devops-super/utility/util"
 	"fmt"
-	"github.com/gogf/gf/v2/os/gtime"
+	"github.com/logrusorgru/aurora"
 	"strings"
 	"testing"
 )
@@ -16,10 +16,8 @@ func Test1_1(t *testing.T) {
 }
 
 func Test1(t *testing.T) {
-	t.Log(gtime.Now().Unix())
-	t.Log(gtime.Now().UnixMilli())
-	t.Log(gtime.Now().UnixMicro())
-	t.Log(gtime.Now().UnixNano())
+
+	fmt.Println(aurora.BgRed(aurora.White("aaa")))
 }
 
 func Test1_3(t *testing.T) {

@@ -12,6 +12,7 @@ import (
 	"devops-super/utility/thirdclients/kubernetes"
 	"fmt"
 	"github.com/gogf/gf/v2/encoding/gjson"
+	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/os/glog"
 	"github.com/gogf/gf/v2/os/gtime"
@@ -88,7 +89,7 @@ func (s *sCiPipeline) Run(ctx context.Context, id int) (err error) {
 	}
 	// 创建 k8s 客户端
 	if kubeClient, err = kubernetes.NewClient(kubeConfig.Text); err != nil {
-		return
+		return gerror.Wrap(err, "Kubernetes Config 无效，客户端连接失败")
 	}
 
 	if !gutil.IsEmpty(ePipeline.KubernetesNamespace) {

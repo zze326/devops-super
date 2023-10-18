@@ -19,8 +19,8 @@
     - [x] 构建环境管理；
     - [x] 流水线管理（编排）；
     - [x] 运行流水线 & 构建流水线客户端镜像；
-    - [ ] 流水线实例展示；
-    - [ ] 获取流水线运行日志；
+    - [x] 流水线运行历史展示；
+    - [x] 获取流水线运行日志；
     - [ ] 流水线参数化支持；
 
 ## 预览地址
@@ -44,6 +44,9 @@
 ![全屏终端](https://raw.githubusercontent.com/zze326/devops-super/main/resource/imgs/terminal-single.png)
 ![终端文件管理器](https://raw.githubusercontent.com/zze326/devops-super/main/resource/imgs/terminal-file-manager.png)
 ![终端主机树](https://raw.githubusercontent.com/zze326/devops-super/main/resource/imgs/terminal-tree.png)
+![流水线管理](https://raw.githubusercontent.com/zze326/devops-super/main/resource/imgs/pipeline-manage.png)
+![流水线编排](https://raw.githubusercontent.com/zze326/devops-super/main/resource/imgs/pipeline-arrange.png)
+![流水线日志](https://raw.githubusercontent.com/zze326/devops-super/main/resource/imgs/pipeline-log.png)
 
 ## 技术栈
 

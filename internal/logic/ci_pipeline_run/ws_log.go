@@ -56,7 +56,7 @@ func (s *sCiPipelineRun) WsLog(ctx context.Context, id int) (err error) {
 	}
 
 	if wsCtx.kubeClient, err = kubernetes.NewClient(kubeConfig.Text); err != nil {
-		return
+		return gerror.Wrap(err, "创建 kubernetes client 失败")
 	}
 
 	ws, err := g.RequestFromCtx(ctx).WebSocket()
@@ -124,6 +124,12 @@ WATCH:
 			}
 		case watch.Modified:
 			podInfo = event.Object.(*corev1.Pod)
+			if podInfo.Status.Phase == corev1.PodFailed {
+				if err := wsCtx.tailLog(logIndex); err != nil {
+					return err
+				}
+				break WATCH
+			}
 			for _, status := range append(podInfo.Status.InitContainerStatuses, podInfo.Status.ContainerStatuses...) {
 				if containerName := fmt.Sprintf("env-%d", logIndex); status.Name == containerName {
 					canLog := status.Ready || status.State.Running != nil
@@ -137,6 +143,7 @@ WATCH:
 					if logIndex == len(podInfo.Status.InitContainerStatuses)+len(podInfo.Status.ContainerStatuses)-1 { // 最后一个容器日志获取完毕才终止监听
 						break WATCH
 					}
+
 					logIndex++
 				}
 			}

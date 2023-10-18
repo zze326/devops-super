@@ -10,6 +10,7 @@ require (
 	github.com/gogf/gf/contrib/nosql/redis/v2 v2.5.4
 	github.com/gogf/gf/v2 v2.5.4
 	github.com/gorilla/websocket v1.5.0
+	github.com/logrusorgru/aurora v2.0.3+incompatible
 	github.com/pkg/sftp v1.13.6
 	golang.org/x/crypto v0.13.0
 	k8s.io/api v0.28.2
