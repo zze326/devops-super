@@ -15,12 +15,15 @@ import (
 func GitClone(data *mid.GitPullData) error {
 	baseName := filepath.Base(data.GitUrl)
 	extension := filepath.Ext(baseName)
+
+	basicAuth := &http.BasicAuth{}
+	if data.GitBasicAuth != nil {
+		basicAuth.Username = data.GitBasicAuth.Username
+		basicAuth.Password = data.GitBasicAuth.Password
+	}
 	fileNameWithoutExtension := baseName[0 : len(baseName)-len(extension)]
 	r, err := git.PlainClone(path.Join(fileNameWithoutExtension), false, &git.CloneOptions{
-		Auth: &http.BasicAuth{
-			Username: data.GitBasicAuth.Username,
-			Password: data.GitBasicAuth.Password,
-		},
+		Auth:          basicAuth,
 		URL:           data.GitUrl,
 		Progress:      os.Stdout,
 		SingleBranch:  true,
