@@ -59,14 +59,6 @@ func (s *sCiPipelineRun) WsLog(ctx context.Context, id int) (err error) {
 		return
 	}
 
-	podInfo, err = wsCtx.kubeClient.CoreV1().Pods(eCiPipelineRun.Namespace).Get(ctx, eCiPipelineRun.PodName, metav1.GetOptions{})
-	if err != nil {
-		return
-	}
-
-	podFinished = podInfo.Status.Phase == corev1.PodFailed || podInfo.Status.Phase == corev1.PodSucceeded // pod 是否已经运行结束
-	allContainerStatus := append(podInfo.Status.InitContainerStatuses, podInfo.Status.ContainerStatuses...)
-
 	ws, err := g.RequestFromCtx(ctx).WebSocket()
 	if err != nil {
 		return err
@@ -75,71 +67,83 @@ func (s *sCiPipelineRun) WsLog(ctx context.Context, id int) (err error) {
 	wsCtx.ws = ws
 
 	go wsCtx.checkClientClose() // 监听客户端连接关闭
-
-	if podFinished { // 如果 pod 已经运行结束了
-		for idx, status := range allContainerStatus {
-			if status.Ready || status.State.Terminated != nil {
-				if err = wsCtx.tailLog(idx); err != nil {
-					return
-				}
-			}
-		}
-	} else { // pod 还在运行中
-		logIndex := 0 // 从第一个容器开始查看日志
-		// 创建 pod 监听
-		watcher, err := wsCtx.kubeClient.CoreV1().Pods(eCiPipelineRun.Namespace).Watch(wsCtx.ctx, metav1.ListOptions{
-			FieldSelector: fmt.Sprintf("metadata.name=%s", eCiPipelineRun.PodName),
-		})
-		if err != nil {
-			return gerror.Wrap(err, "Failed to create watcher")
-		}
-		defer watcher.Stop()
-		wsCtx.watcher = watcher
-		// 把已经运行完毕和正在运行的容器的日志先获取到
-		for idx, containerStatus := range allContainerStatus {
-			if containerStatus.Ready {
-				logIndex = idx + 1
-				if err = wsCtx.tailLog(idx); err != nil {
-					return err
-				}
-			} else {
-				if containerStatus.State.Running != nil {
-					logIndex = idx + 1
-					if err = wsCtx.tailLog(idx); err != nil {
-						return err
-					}
-					break
-				}
-			}
-		}
-		// 监听 Pod 运行状态
-	WATCH:
-		for event := range watcher.ResultChan() {
-			switch event.Type {
-			case watch.Modified:
-				var pod = event.Object.(*corev1.Pod)
-				for _, status := range append(pod.Status.InitContainerStatuses, pod.Status.ContainerStatuses...) {
-					if containerName := fmt.Sprintf("env-%d", logIndex); status.Name == containerName {
-						canLog := status.Ready || status.State.Running != nil
-						if !canLog {
-							continue
+	logIndex := 0               // 从第一个容器开始查看日志
+	// 创建 pod 监听
+	watcher, err := wsCtx.kubeClient.CoreV1().Pods(eCiPipelineRun.Namespace).Watch(wsCtx.ctx, metav1.ListOptions{
+		FieldSelector: fmt.Sprintf("metadata.name=%s", eCiPipelineRun.PodName),
+	})
+	if err != nil {
+		return gerror.Wrap(err, "Failed to create watcher")
+	}
+	defer watcher.Stop()
+	wsCtx.watcher = watcher
+	// 监听 Pod 运行状态
+WATCH:
+	for event := range watcher.ResultChan() {
+		switch event.Type {
+		case watch.Added:
+			podInfo = event.Object.(*corev1.Pod)
+			podFinished = podInfo.Status.Phase == corev1.PodFailed || podInfo.Status.Phase == corev1.PodSucceeded // pod 是否已经运行结束
+			allContainerStatus := append(podInfo.Status.InitContainerStatuses, podInfo.Status.ContainerStatuses...)
+			if podFinished {
+				for idx, status := range allContainerStatus {
+					if status.Ready || status.State.Terminated != nil {
+						if err = wsCtx.tailLog(idx); err != nil {
+							return
 						}
-						if err := wsCtx.tailLog(logIndex); err != nil {
+					}
+				}
+				break WATCH
+			} else {
+				// 创建 pod 监听
+				watcher, err := wsCtx.kubeClient.CoreV1().Pods(eCiPipelineRun.Namespace).Watch(wsCtx.ctx, metav1.ListOptions{
+					FieldSelector: fmt.Sprintf("metadata.name=%s", eCiPipelineRun.PodName),
+				})
+				if err != nil {
+					return gerror.Wrap(err, "Failed to create watcher")
+				}
+				defer watcher.Stop()
+				wsCtx.watcher = watcher
+				// 把已经运行完毕和正在运行的容器的日志先获取到
+				for idx, containerStatus := range allContainerStatus {
+					if containerStatus.Ready {
+						logIndex = idx + 1
+						if err = wsCtx.tailLog(idx); err != nil {
 							return err
 						}
-
-						if logIndex == len(allContainerStatus)-1 { // 最后一个容器日志获取完毕才终止监听
-							break WATCH
+					} else {
+						if containerStatus.State.Running != nil {
+							logIndex = idx + 1
+							if err = wsCtx.tailLog(idx); err != nil {
+								return err
+							}
+							break
 						}
-						logIndex++
 					}
 				}
-			case watch.Error:
-				glog.Errorf(wsCtx.ctx, "Received watch error: %v", event.Object)
-				break WATCH
 			}
+		case watch.Modified:
+			podInfo = event.Object.(*corev1.Pod)
+			for _, status := range append(podInfo.Status.InitContainerStatuses, podInfo.Status.ContainerStatuses...) {
+				if containerName := fmt.Sprintf("env-%d", logIndex); status.Name == containerName {
+					canLog := status.Ready || status.State.Running != nil
+					if !canLog {
+						continue
+					}
+					if err := wsCtx.tailLog(logIndex); err != nil {
+						return err
+					}
+
+					if logIndex == len(podInfo.Status.InitContainerStatuses)+len(podInfo.Status.ContainerStatuses)-1 { // 最后一个容器日志获取完毕才终止监听
+						break WATCH
+					}
+					logIndex++
+				}
+			}
+		case watch.Error:
+			glog.Errorf(wsCtx.ctx, "Received watch error: %v", event.Object)
+			break WATCH
 		}
 	}
-	glog.Debug(ctx, "日志连接断开")
 	return nil
 }

@@ -11,6 +11,6 @@ import (
 )
 
 type ICiPipelineRunV1 interface {
-	GetPageLst(ctx context.Context, req *v1.GetPageLstReq) (res *v1.GetPageLstRes, err error)
 	WsLog(ctx context.Context, req *v1.WsLogReq) (res *v1.WsLogRes, err error)
+	WsPageLst(ctx context.Context, req *v1.WsPageLstReq) (res *v1.WsPageLstRes, err error)
 }

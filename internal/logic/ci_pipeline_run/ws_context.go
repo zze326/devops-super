@@ -57,13 +57,6 @@ func (wsCtx *wsContext) checkClientClose() {
 	for {
 		_, _, err := wsCtx.ws.ReadMessage() // 仅用来监听客户端连接关闭
 		if err != nil {
-			//if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
-			//	// 连接正常关闭或正在关闭
-			//	fmt.Println("连接关闭:", err)
-			//} else {
-			//	// 连接异常关闭
-			//	fmt.Println("连接异常关闭:", err)
-			//}
 			handleClose()
 			break
 		}
