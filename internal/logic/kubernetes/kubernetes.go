@@ -1,4 +1,4 @@
-package common
+package kubernetes
 
 import (
 	"context"
@@ -8,17 +8,17 @@ import (
 	"time"
 )
 
-type sCommon struct{}
+type sKubernetes struct{}
 
 func init() {
-	service.RegisterCommon(New())
+	service.RegisterKubernetes(New())
 }
 
-func New() *sCommon {
-	return &sCommon{}
+func New() *sKubernetes {
+	return &sKubernetes{}
 }
 
-func (*sCommon) TestConnectKubernetes(ctx context.Context, config string) (err error) {
+func (*sKubernetes) TestConnect(ctx context.Context, config string) (err error) {
 	timeoutCtx, _ := context.WithTimeout(ctx, time.Second*2)
 	client, err := kubernetes.NewClient(timeoutCtx, config)
 	if err != nil {

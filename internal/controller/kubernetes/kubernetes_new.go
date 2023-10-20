@@ -2,14 +2,14 @@
 // Code generated and maintained by GoFrame CLI tool. DO NOT EDIT.
 // =================================================================================
 
-package common
+package kubernetes
 
 import (
-	"context"
-
-	"devops-super/api/common/v1"
+	"devops-super/api/kubernetes"
 )
 
-type ICommonV1 interface {
-	TestConnectKubernetes(ctx context.Context, req *v1.TestConnectKubernetesReq) (res *v1.TestConnectKubernetesRes, err error)
+type ControllerV1 struct{}
+
+func NewV1() kubernetes.IKubernetesV1 {
+	return &ControllerV1{}
 }

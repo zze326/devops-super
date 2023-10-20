@@ -10,22 +10,22 @@ import (
 )
 
 type (
-	ICommon interface {
-		TestConnectKubernetes(ctx context.Context, config string) (err error)
+	IKubernetes interface {
+		TestConnect(ctx context.Context, config string) (err error)
 	}
 )
 
 var (
-	localCommon ICommon
+	localKubernetes IKubernetes
 )
 
-func Common() ICommon {
-	if localCommon == nil {
-		panic("implement not found for interface ICommon, forgot register?")
+func Kubernetes() IKubernetes {
+	if localKubernetes == nil {
+		panic("implement not found for interface IKubernetes, forgot register?")
 	}
-	return localCommon
+	return localKubernetes
 }
 
-func RegisterCommon(i ICommon) {
-	localCommon = i
+func RegisterKubernetes(i IKubernetes) {
+	localKubernetes = i
 }

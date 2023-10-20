@@ -5,11 +5,11 @@ import (
 	"devops-super/internal/controller/ci_env"
 	"devops-super/internal/controller/ci_pipeline"
 	"devops-super/internal/controller/ci_pipeline_run"
-	"devops-super/internal/controller/common"
 	"devops-super/internal/controller/dept"
 	"devops-super/internal/controller/host"
 	"devops-super/internal/controller/host_group"
 	"devops-super/internal/controller/host_terminal_session"
+	"devops-super/internal/controller/kubernetes"
 	"devops-super/internal/controller/permission"
 	"devops-super/internal/controller/public"
 	"devops-super/internal/controller/role"
@@ -40,8 +40,6 @@ var (
 				group.Group("/", func(group *ghttp.RouterGroup) {
 					group.Middleware(service.Middleware().Auth)
 					group.Bind(
-						// 公共逻辑
-						common.NewV1(),
 						// 系统管理
 						user.NewV1(),       // 用户
 						permission.NewV1(), // 权限
@@ -56,6 +54,8 @@ var (
 						ci_env.NewV1(),          // ci 环境
 						ci_pipeline.NewV1(),     // ci 流水线
 						ci_pipeline_run.NewV1(), // ci 流水线运行记录
+						// 其它
+						kubernetes.NewV1(), // Kubernetes 相关
 					)
 				})
 			})
