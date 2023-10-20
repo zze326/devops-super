@@ -10,6 +10,7 @@ import (
 	"devops-super/internal/model/mid"
 	"devops-super/internal/service"
 	"devops-super/utility/thirdclients/kubernetes"
+	"devops-super/utility/util"
 	"fmt"
 	"github.com/gogf/gf/v2/encoding/gjson"
 	"github.com/gogf/gf/v2/errors/gerror"
@@ -369,6 +370,17 @@ func createCiPod(kubeClient *kubernetes.Client, namespace, name string, arrangeC
 			),
 			RestartPolicy: corev1.RestartPolicyNever,
 		},
+	}
+
+	pvcs, err := kubeClient.GetPersistentVolumeClaims(namespace)
+	if err != nil {
+		return gerror.Wrap(err, "获取集群 PVC 信息失败")
+	}
+
+	for _, volume := range volumes {
+		if !util.InSlice(pvcs, volume.Name) {
+			return gerror.Newf("集群的 %s 命名空间下不存在名为 %s 的 PVC", namespace, volume.Name)
+		}
 	}
 
 	if _, err := kubeClient.CoreV1().Pods(namespace).Create(kubeClient.Ctx, pod, metav1.CreateOptions{}); err != nil {
