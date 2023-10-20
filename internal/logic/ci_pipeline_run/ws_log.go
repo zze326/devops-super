@@ -55,7 +55,7 @@ func (s *sCiPipelineRun) WsLog(ctx context.Context, id int) (err error) {
 		return err
 	}
 
-	if wsCtx.kubeClient, err = kubernetes.NewClient(kubeConfig.Text); err != nil {
+	if wsCtx.kubeClient, err = kubernetes.NewClient(ctx, kubeConfig.Text); err != nil {
 		return gerror.Wrap(err, "创建 kubernetes client 失败")
 	}
 

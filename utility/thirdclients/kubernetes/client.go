@@ -1,6 +1,7 @@
 package kubernetes
 
 import (
+	"context"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -9,9 +10,10 @@ import (
 type Client struct {
 	*kubernetes.Clientset
 	*rest.Config
+	Ctx context.Context
 }
 
-func NewClient(config string) (*Client, error) {
+func NewClient(ctx context.Context, config string) (*Client, error) {
 	var (
 		restConf  *rest.Config
 		err       error
@@ -27,5 +29,6 @@ func NewClient(config string) (*Client, error) {
 	return &Client{
 		Clientset: clientSet,
 		Config:    restConf,
+		Ctx:       ctx,
 	}, nil
 }

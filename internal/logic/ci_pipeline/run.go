@@ -88,7 +88,7 @@ func (s *sCiPipeline) Run(ctx context.Context, id int) (err error) {
 		return
 	}
 	// 创建 k8s 客户端
-	if kubeClient, err = kubernetes.NewClient(kubeConfig.Text); err != nil {
+	if kubeClient, err = kubernetes.NewClient(ctx, kubeConfig.Text); err != nil {
 		return gerror.Wrap(err, "Kubernetes Config 无效，客户端连接失败")
 	}
 
@@ -334,7 +334,7 @@ func createCiPod(kubeClient *kubernetes.Client, namespace, name string, ciConfig
 			RestartPolicy: corev1.RestartPolicyNever,
 		},
 	}
-	if _, err := kubeClient.CoreV1().Pods(namespace).Create(context.Background(), pod, metav1.CreateOptions{}); err != nil {
+	if _, err := kubeClient.CoreV1().Pods(namespace).Create(kubeClient.Ctx, pod, metav1.CreateOptions{}); err != nil {
 		return err
 	}
 	return nil

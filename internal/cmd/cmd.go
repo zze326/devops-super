@@ -5,6 +5,7 @@ import (
 	"devops-super/internal/controller/ci_env"
 	"devops-super/internal/controller/ci_pipeline"
 	"devops-super/internal/controller/ci_pipeline_run"
+	"devops-super/internal/controller/common"
 	"devops-super/internal/controller/dept"
 	"devops-super/internal/controller/host"
 	"devops-super/internal/controller/host_group"
@@ -39,6 +40,8 @@ var (
 				group.Group("/", func(group *ghttp.RouterGroup) {
 					group.Middleware(service.Middleware().Auth)
 					group.Bind(
+						// 公共逻辑
+						common.NewV1(),
 						// 系统管理
 						user.NewV1(),       // 用户
 						permission.NewV1(), // 权限

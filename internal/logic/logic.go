@@ -8,6 +8,7 @@ import (
 	_ "devops-super/internal/logic/ci_env"
 	_ "devops-super/internal/logic/ci_pipeline"
 	_ "devops-super/internal/logic/ci_pipeline_run"
+	_ "devops-super/internal/logic/common"
 	_ "devops-super/internal/logic/context"
 	_ "devops-super/internal/logic/dept"
 	_ "devops-super/internal/logic/host"
