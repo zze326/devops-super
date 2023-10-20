@@ -26,7 +26,7 @@ import (
 func (s *sCiPipeline) Run(ctx context.Context, id int) (err error) {
 	var (
 		ePipeline        *entity.CiPipeline
-		config           mid.CiPipelineConfig
+		arrangeConfig    mid.CiPipelineConfig // 编排配置
 		kubeConfigSecret *entity.Secret
 		kubeConfig       *mid.TextContent
 		kubeClient       *kubernetes.Client
@@ -40,18 +40,18 @@ func (s *sCiPipeline) Run(ctx context.Context, id int) (err error) {
 		return
 	}
 
-	// 解析 Pipeline 配置到结构体对象
-	if err = ePipeline.Config.Scan(&config); err != nil {
+	// 解析 Pipeline 编排配置到结构体对象
+	if err = ePipeline.Config.Scan(&arrangeConfig); err != nil {
 		return
 	}
 
 	// 获取环境信息 map
-	if envMap, err = service.CiEnv().GetEntityMap(ctx, config.GetEnvIds()); err != nil {
+	if envMap, err = service.CiEnv().GetEntityMap(ctx, arrangeConfig.GetEnvIds()); err != nil {
 		return
 	}
 
 	// 组装环境关联的镜像和秘钥名称
-	for _, envItem := range config {
+	for _, envItem := range arrangeConfig {
 		envItem.Image = envMap[envItem.Id].Image
 		envItem.SecretName = envMap[envItem.Id].SecretName
 
@@ -99,7 +99,7 @@ func (s *sCiPipeline) Run(ctx context.Context, id int) (err error) {
 	ciPodName := fmt.Sprintf("ci-%s-%d-%s", ePipeline.Name, id, time.Now().Format("20060102150405"))
 
 	// 创建 ci pod
-	if err = createCiPod(kubeClient, kubeNamespace, ciPodName, config); err != nil {
+	if err = createCiPod(kubeClient, kubeNamespace, ciPodName, arrangeConfig, envMap); err != nil {
 		return
 	}
 
@@ -127,12 +127,12 @@ func (s *sCiPipeline) Run(ctx context.Context, id int) (err error) {
 	}
 
 	// 协程监听 pod 状态
-	go watchCiPod(g.RequestFromCtx(ctx).GetNeverDoneCtx(), kubeClient, kubeNamespace, ciPodName, config, int(runId))
+	go watchCiPod(g.RequestFromCtx(ctx).GetNeverDoneCtx(), kubeClient, kubeNamespace, ciPodName, int(runId))
 	return
 }
 
 // 监听 ci pod
-func watchCiPod(ctx context.Context, kubeClient *kubernetes.Client, namespace, name string, ciConfig mid.CiPipelineConfig, runId int) {
+func watchCiPod(ctx context.Context, kubeClient *kubernetes.Client, namespace, name string, runId int) {
 	defer func() {
 		if err := recover(); err != nil {
 			glog.Error(ctx, err)
@@ -271,10 +271,11 @@ WATCH:
 //}
 
 // 创建 ci pod
-func createCiPod(kubeClient *kubernetes.Client, namespace, name string, ciConfig mid.CiPipelineConfig) error {
+func createCiPod(kubeClient *kubernetes.Client, namespace, name string, arrangeConfig mid.CiPipelineConfig, envMap map[int]*entity.CiEnv) error {
 	var (
 		containers     []corev1.Container
 		initContainers []corev1.Container
+		volumes        []corev1.Volume
 	)
 
 	var createEnvs = func(envs map[string]string) []corev1.EnvVar {
@@ -285,14 +286,14 @@ func createCiPod(kubeClient *kubernetes.Client, namespace, name string, ciConfig
 		return result
 	}
 
-	for idx, envItem := range ciConfig {
+	for idx, envItem := range arrangeConfig {
 		stagesJson, err := gjson.EncodeString(envItem.Stages)
 		if err != nil {
 			return err
 		}
 		container := corev1.Container{
 			Name:  fmt.Sprintf("env-%d", idx),
-			Image: ciConfig[0].Image,
+			Image: arrangeConfig[0].Image,
 			Env: createEnvs(map[string]string{
 				consts.CI_CLIENT_POD_CONTAINER_STAGES_ENV_NAME: stagesJson,
 			}),
@@ -304,15 +305,51 @@ func createCiPod(kubeClient *kubernetes.Client, namespace, name string, ciConfig
 				},
 			},
 		}
-		if len(ciConfig) == 1 { // 如果只有一个环境容器，则设置该容器到 containers
+
+		// 判断该环境启用了持久化
+		var persistenceConfig mid.CiEnvPersistenceConfig
+		if persistenceConfigJson := envMap[envItem.Id].PersistenceConfig; !persistenceConfigJson.IsNil() {
+			if err := envMap[envItem.Id].PersistenceConfig.Scan(&persistenceConfig); err != nil {
+				return err
+			}
+		}
+		for _, item := range persistenceConfig {
+			volumeName := item.PvcName
+			existsPvc := false
+			for _, volume := range volumes {
+				if item.PvcName == volume.Name {
+					existsPvc = true
+					break
+				}
+			}
+			if !existsPvc {
+				volumes = append(volumes, corev1.Volume{
+					Name: volumeName,
+					VolumeSource: corev1.VolumeSource{
+						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+							ClaimName: item.PvcName,
+						},
+					},
+				})
+			}
+
+			container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
+				Name:      volumeName,
+				MountPath: item.MountPath,
+				SubPath:   item.SubPath,
+			})
+		}
+
+		if len(arrangeConfig) == 1 { // 如果只有一个环境容器，则设置该容器到 containers
 			containers = append(containers, container)
 		} else { // 如果有多个环境容器，则最后一个容器设置到 containers，其它容器设置到 initContainers
-			if idx != (len(ciConfig) - 1) { // 如果不是最后一个容器
+			if idx != (len(arrangeConfig) - 1) { // 如果不是最后一个容器
 				initContainers = append(initContainers, container)
 			} else { // 是最后一个容器
 				containers = append(containers, container)
 			}
 		}
+
 	}
 
 	pod := &corev1.Pod{
@@ -323,17 +360,17 @@ func createCiPod(kubeClient *kubernetes.Client, namespace, name string, ciConfig
 		Spec: corev1.PodSpec{
 			InitContainers: initContainers,
 			Containers:     containers,
-			Volumes: []corev1.Volume{
-				{
-					Name: consts.CI_CLIENT_POD_WORKSPACE_VOLUME_NAME,
-					VolumeSource: corev1.VolumeSource{
-						EmptyDir: &corev1.EmptyDirVolumeSource{},
-					},
+			Volumes: append(volumes, corev1.Volume{
+				Name: consts.CI_CLIENT_POD_WORKSPACE_VOLUME_NAME,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			},
+			),
 			RestartPolicy: corev1.RestartPolicyNever,
 		},
 	}
+
 	if _, err := kubeClient.CoreV1().Pods(namespace).Create(kubeClient.Ctx, pod, metav1.CreateOptions{}); err != nil {
 		return err
 	}

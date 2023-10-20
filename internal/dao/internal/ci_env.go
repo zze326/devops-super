@@ -20,20 +20,22 @@ type CiEnvDao struct {
 
 // CiEnvColumns defines and stores column names for table ci_env.
 type CiEnvColumns struct {
-	Id         string //
-	Name       string // 环境名称
-	Image      string // 镜像
-	SecretName string // Kubernetes Secret 名称，拉取镜像使用
-	UpdatedAt  string // 更新时间
+	Id                string //
+	Name              string // 环境名称
+	Image             string // 镜像
+	SecretName        string // Kubernetes Secret 名称，拉取镜像使用
+	PersistenceConfig string // 持久化配置
+	UpdatedAt         string // 更新时间
 }
 
 // ciEnvColumns holds the columns for table ci_env.
 var ciEnvColumns = CiEnvColumns{
-	Id:         "id",
-	Name:       "name",
-	Image:      "image",
-	SecretName: "secret_name",
-	UpdatedAt:  "updated_at",
+	Id:                "id",
+	Name:              "name",
+	Image:             "image",
+	SecretName:        "secret_name",
+	PersistenceConfig: "persistence_config",
+	UpdatedAt:         "updated_at",
 }
 
 // NewCiEnvDao creates and returns a new DAO object for table data access.

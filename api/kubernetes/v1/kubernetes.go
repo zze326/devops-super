@@ -19,3 +19,13 @@ type GetNamespaceLstReq struct {
 type GetNamespaceLstRes struct {
 	Namespaces []string `json:"namespaces"`
 }
+
+type GetPersistentVolumeClaimLstReq struct {
+	g.Meta    `method:"get" path:"/kubernetes/persistent-volume-claim/list" summary:"获取集群指定命名空间中的 PVC 列表" tags:"Kubernetes"`
+	SecretId  int    `v:"required" p:"secretId"`
+	Namespace string `v:"required" p:"namespace"`
+}
+
+type GetPersistentVolumeClaimLstRes struct {
+	Pvcs []string `json:"pvcs"`
+}

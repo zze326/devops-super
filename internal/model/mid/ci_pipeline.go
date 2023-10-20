@@ -1,13 +1,17 @@
 package mid
 
+import "github.com/gogf/gf/v2/encoding/gjson"
+
 type CiPipeline struct {
-	Name                string `v:"required|max-length:30" json:"name"`
-	KubernetesConfigId  int    `v:"required" json:"kubernetesConfigId"`
-	KubernetesNamespace string `json:"kubernetesNamespace"`
-	Desc                string `json:"desc"`
+	Name                string      `v:"required|max-length:30" json:"name"`
+	KubernetesConfigId  int         `v:"required" json:"kubernetesConfigId"`
+	KubernetesNamespace string      `json:"kubernetesNamespace"`
+	PersistenceConfig   *gjson.Json `json:"persistenceConfig"`
+	Desc                string      `json:"desc"`
 }
 
-type CiPipelineConfig []*CiPipelineConfigEnvItem
+// 流水线编排配置
+type CiPipelineConfig []*CiPipelineConfigItem
 
 func (c CiPipelineConfig) GetEnvIds() []int {
 	var envIds []int
@@ -17,7 +21,7 @@ func (c CiPipelineConfig) GetEnvIds() []int {
 	return envIds
 }
 
-type CiPipelineConfigEnvItem struct {
+type CiPipelineConfigItem struct {
 	Id         int                             `json:"id" yaml:"id"`
 	Image      string                          `json:"image" yaml:"image"`
 	SecretName string                          `json:"secretName" yaml:"secretName"`

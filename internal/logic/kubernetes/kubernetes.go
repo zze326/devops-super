@@ -37,3 +37,11 @@ func (*sKubernetes) GetNamespaces(ctx context.Context, config string) ([]string,
 	}
 	return client.GetNamespaces()
 }
+
+func (*sKubernetes) GetPersistentVolumeClaims(ctx context.Context, config, namespace string) ([]string, error) {
+	client, err := kubernetes.NewClient(ctx, config)
+	if err != nil {
+		return nil, gerror.Wrap(err, "配置格式错误")
+	}
+	return client.GetPersistentVolumeClaims(namespace)
+}

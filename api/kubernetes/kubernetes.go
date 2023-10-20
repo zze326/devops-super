@@ -13,4 +13,5 @@ import (
 type IKubernetesV1 interface {
 	TestConnect(ctx context.Context, req *v1.TestConnectReq) (res *v1.TestConnectRes, err error)
 	GetNamespaceLst(ctx context.Context, req *v1.GetNamespaceLstReq) (res *v1.GetNamespaceLstRes, err error)
+	GetPersistentVolumeClaimLst(ctx context.Context, req *v1.GetPersistentVolumeClaimLstReq) (res *v1.GetPersistentVolumeClaimLstRes, err error)
 }

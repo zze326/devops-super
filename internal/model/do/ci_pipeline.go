@@ -17,6 +17,7 @@ type CiPipeline struct {
 	Name                interface{} // 名称
 	KubernetesConfigId  interface{} // 关联的 Kubernetes Config id
 	KubernetesNamespace interface{} // Pod 所在命名空间
+	Params              *gjson.Json // 构建参数
 	Config              *gjson.Json // 配置
 	Desc                interface{} // 描述
 	UpdatedAt           *gtime.Time // 更新时间
