@@ -12,6 +12,7 @@ import (
 type (
 	IKubernetes interface {
 		TestConnect(ctx context.Context, config string) (err error)
+		GetNamespaces(ctx context.Context, config string) ([]string, error)
 	}
 )
 

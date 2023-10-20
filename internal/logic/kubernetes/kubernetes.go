@@ -29,3 +29,11 @@ func (*sKubernetes) TestConnect(ctx context.Context, config string) (err error) 
 	}
 	return nil
 }
+
+func (*sKubernetes) GetNamespaces(ctx context.Context, config string) ([]string, error) {
+	client, err := kubernetes.NewClient(ctx, config)
+	if err != nil {
+		return nil, gerror.Wrap(err, "配置格式错误")
+	}
+	return client.GetNamespaces()
+}

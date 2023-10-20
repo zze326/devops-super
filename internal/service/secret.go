@@ -10,6 +10,7 @@ import (
 	"devops-super/api"
 	"devops-super/internal/model/do"
 	"devops-super/internal/model/entity"
+	"devops-super/internal/model/mid"
 )
 
 type (
@@ -20,6 +21,7 @@ type (
 		GetLst(ctx context.Context, in *do.Secret) (out []*entity.Secret, err error)
 		Get(ctx context.Context, in *do.Secret) (out *entity.Secret, err error)
 		Del(ctx context.Context, in *do.Secret) (err error)
+		GetKubernetesConfig(ctx context.Context, in *do.Secret) (*mid.TextContent, error)
 	}
 )
 
