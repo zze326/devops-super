@@ -11,6 +11,7 @@ import (
 )
 
 type ICiPipelineRunV1 interface {
+	Cancel(ctx context.Context, req *v1.CancelReq) (res *v1.CancelRes, err error)
 	WsLog(ctx context.Context, req *v1.WsLogReq) (res *v1.WsLogRes, err error)
 	WsPageLst(ctx context.Context, req *v1.WsPageLstReq) (res *v1.WsPageLstRes, err error)
 }

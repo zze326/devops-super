@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/gogf/gf/v2/net/ghttp"
 	"github.com/gogf/gf/v2/os/gtime"
+	"github.com/logrusorgru/aurora"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/watch"
 )
@@ -21,6 +22,10 @@ type wsContext struct {
 	namespace    string
 	podName      string
 	lastPingTime *gtime.Time
+}
+
+func (wsCtx *wsContext) writeErr(err error) {
+	wsCtx.ws.WriteMessage(ghttp.WsMsgText, []byte(aurora.BgRed(err.Error()).String()))
 }
 
 // 获取 Pod 日志

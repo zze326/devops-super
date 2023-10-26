@@ -2,12 +2,7 @@ package ci_pipeline_run
 
 import (
 	"context"
-	"devops-super/internal/dao"
-	"devops-super/internal/model/do"
 	"devops-super/internal/model/entity"
-	"devops-super/internal/model/mid"
-	"devops-super/internal/service"
-	"devops-super/utility/thirdclients/kubernetes"
 	"fmt"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
@@ -20,9 +15,6 @@ import (
 func (s *sCiPipelineRun) WsLog(ctx context.Context, id int) (err error) {
 	var (
 		eCiPipelineRun = new(entity.CiPipelineRun) // 运行记录
-		eCiPipeline    *entity.CiPipeline          // 源 pipeline
-		eSecret        *entity.Secret              // 秘钥
-		kubeConfig     = new(mid.TextContent)      // k8s 配置内容
 		podInfo        *corev1.Pod                 // ci pod 信息
 		podFinished    bool                        // pod 是否已执行完毕
 		wsCtx          = &wsContext{
@@ -30,50 +22,38 @@ func (s *sCiPipelineRun) WsLog(ctx context.Context, id int) (err error) {
 		}
 	)
 	wsCtx.ctx, wsCtx.cancelFunc = context.WithCancel(ctx)
-	if err = dao.CiPipelineRun.Ctx(ctx).WherePri(id).Scan(eCiPipelineRun); err != nil {
-		return
-	}
-	wsCtx.namespace = eCiPipelineRun.Namespace
-	wsCtx.podName = eCiPipelineRun.PodName
-
-	if eCiPipeline, err = service.CiPipeline().Get(ctx, &do.CiPipeline{Id: eCiPipelineRun.PipelineId}); err != nil {
-		return
-	}
-
-	if eCiPipeline == nil {
-		return gerror.New("找不到源流水线")
-	}
-
-	if eSecret, err = service.Secret().Get(ctx, &do.Secret{Id: eCiPipeline.KubernetesConfigId}); err != nil {
-		return
-	}
-	if eSecret == nil {
-		return gerror.New("找不到 Kubernetes 配置")
-	}
-
-	if err = eSecret.Content.Scan(kubeConfig); err != nil {
-		return err
-	}
-
-	if wsCtx.kubeClient, err = kubernetes.NewClient(ctx, kubeConfig.Text); err != nil {
-		return gerror.Wrap(err, "创建 kubernetes client 失败")
-	}
-
 	ws, err := g.RequestFromCtx(ctx).WebSocket()
 	if err != nil {
 		return err
 	}
 	defer ws.Close()
 	wsCtx.ws = ws
-
 	go wsCtx.checkClientClose() // 监听客户端连接关闭
-	logIndex := 0               // 从第一个容器开始查看日志
+
+	eCiPipelineRun, wsCtx.kubeClient, err = s.GetWithKubernetesClient(ctx, id)
+	if err != nil {
+		wsCtx.writeErr(err)
+		return err
+	}
+
+	wsCtx.namespace = eCiPipelineRun.Namespace
+	wsCtx.podName = eCiPipelineRun.PodName
+
+	_, err = wsCtx.kubeClient.GetPod(wsCtx.ctx, eCiPipelineRun.Namespace, eCiPipelineRun.PodName)
+	if err != nil {
+		wsCtx.writeErr(err)
+		return err
+	}
+
+	logIndex := 0 // 从第一个容器开始查看日志
 	// 创建 pod 监听
 	watcher, err := wsCtx.kubeClient.CoreV1().Pods(eCiPipelineRun.Namespace).Watch(wsCtx.ctx, metav1.ListOptions{
 		FieldSelector: fmt.Sprintf("metadata.name=%s", eCiPipelineRun.PodName),
 	})
 	if err != nil {
-		return gerror.Wrap(err, "Failed to create watcher")
+		err = gerror.Wrap(err, "Failed to create watcher")
+		wsCtx.writeErr(err)
+		return err
 	}
 	defer watcher.Stop()
 	wsCtx.watcher = watcher

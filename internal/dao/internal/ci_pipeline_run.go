@@ -24,7 +24,7 @@ type CiPipelineRunColumns struct {
 	PipelineId string // 流水线 id
 	PodName    string // Pod 名称
 	Namespace  string // 名称空间
-	Status     string // 状态:0-运行中,1:成功,2:失败
+	Status     string // 状态:0-运行中,1:成功,2:失败,3:取消
 	UpdatedAt  string // 更新时间
 	CreatedAt  string // 创建时间
 }

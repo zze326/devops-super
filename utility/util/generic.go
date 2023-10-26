@@ -16,3 +16,7 @@ func InSlice[T comparable](slice []T, v T) bool {
 	}
 	return false
 }
+
+func ToPointer[T any](val T) *T {
+	return &val
+}

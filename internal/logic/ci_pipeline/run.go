@@ -171,7 +171,11 @@ WATCH:
 				break WATCH
 			} else if pod.Status.Phase == corev1.PodFailed {
 				glog.Debugf(ctx, "Pod '%s' modified in namespace '%s' Failed", pod.Name, pod.Namespace)
-				if _, err := dao.CiPipelineRun.Ctx(ctx).WherePri(runId).Data(do.CiPipelineRun{
+				cols := dao.CiPipelineRun.Columns()
+				if _, err := dao.CiPipelineRun.Ctx(ctx).Where(g.Map{
+					cols.Id:     runId,
+					cols.Status: 0,
+				}).Data(do.CiPipelineRun{
 					Status: 2,
 				}).OmitNilData().Update(); err != nil {
 					glog.Error(ctx, err)
