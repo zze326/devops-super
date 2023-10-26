@@ -1,13 +1,11 @@
 package mid
 
-import "github.com/gogf/gf/v2/encoding/gjson"
-
 type CiPipeline struct {
-	Name                string      `v:"required|max-length:30" json:"name"`
-	KubernetesConfigId  int         `v:"required" json:"kubernetesConfigId"`
-	KubernetesNamespace string      `json:"kubernetesNamespace"`
-	PersistenceConfig   *gjson.Json `json:"persistenceConfig"`
-	Desc                string      `json:"desc"`
+	Name                string `v:"required|max-length:30" json:"name"`
+	KubernetesConfigId  int    `v:"required" json:"kubernetesConfigId"`
+	KubernetesNamespace string `json:"kubernetesNamespace"`
+	Parameterize        bool   `json:"parameterize"`
+	Desc                string `json:"desc"`
 }
 
 // 流水线编排配置

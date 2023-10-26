@@ -9,6 +9,6 @@ import (
 )
 
 func (c *ControllerV1) UptConfig(ctx context.Context, req *v1.UptConfigReq) (res *v1.UptConfigRes, err error) {
-	err = service.CiPipeline().Upt(ctx, &do.CiPipeline{Id: req.Id, Config: req.Config})
+	err = service.CiPipeline().Upt(ctx, &do.CiPipeline{Id: req.Id, Config: req.Config, Params: req.Params})
 	return
 }

@@ -35,6 +35,7 @@ type UptRes struct{}
 type UptConfigReq struct {
 	g.Meta `method:"patch" path:"/ci-pipeline/{id}/config" summary:"更新 CI 流水线配置" tags:"CI 流水线"`
 	Id     int         `v:"min:1#id必须" path:"id"`
+	Params *gjson.Json `v:"required" json:"params"`
 	Config *gjson.Json `v:"required" json:"config"`
 }
 

@@ -24,6 +24,7 @@ type CiPipelineColumns struct {
 	Name                string // 名称
 	KubernetesConfigId  string // 关联的 Kubernetes Config id
 	KubernetesNamespace string // Pod 所在命名空间
+	Parameterize        string // 是否是参数化构建
 	Params              string // 构建参数
 	Config              string // 配置
 	Desc                string // 描述
@@ -36,6 +37,7 @@ var ciPipelineColumns = CiPipelineColumns{
 	Name:                "name",
 	KubernetesConfigId:  "kubernetes_config_id",
 	KubernetesNamespace: "kubernetes_namespace",
+	Parameterize:        "parameterize",
 	Params:              "params",
 	Config:              "config",
 	Desc:                "desc",
