@@ -6,6 +6,7 @@ gfcli:
     tagPrefixes:
       #      - registry-azj-registry.cn-shanghai.cr.aliyuncs.com/ops/
       - zze326/
+      - registry.cn-shenzhen.aliyuncs.com/zze/
   gen:
     dao:
       - link: "mysql:devops_super:devops_super.zze@tcp(192.168.2.231:3306)/devops_super?loc=Local&parseTime=true"
