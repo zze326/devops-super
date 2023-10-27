@@ -20,7 +20,7 @@ func (c *ControllerV1) RefreshToken(ctx context.Context, req *v1.RefreshTokenReq
 		Username:     eUser.Username,
 		RealName:     eUser.RealName,
 		Token:        token,
-		Expire:       expire.UnixMilli(),
+		Expires:      expire.UnixMilli(),
 		RefreshAfter: refreshAfter,
 		Roles:        eUser.RoleCodes(),
 	}

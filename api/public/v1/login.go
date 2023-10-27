@@ -25,7 +25,7 @@ type RefreshTokenRes struct {
 	Username     string   `json:"username"`
 	RealName     string   `json:"realName"`
 	Token        string   `json:"token"`
-	Expire       int64    `json:"expire"`
+	Expires      int64    `json:"expires"`
 	RefreshAfter int64    `json:"refreshAfter"`
 	Roles        []string `json:"roles"`
 }
