@@ -13,6 +13,7 @@ CREATE TABLE `ci_env` (
                           `name` varchar(64) NOT NULL COMMENT '环境名称',
                           `image` varchar(256) NOT NULL COMMENT '镜像',
                           `secret_name` varchar(128) DEFAULT NULL COMMENT 'Kubernetes Secret 名称，拉取镜像使用',
+                          `persistence_config` json DEFAULT NULL COMMENT '持久化配置',
                           `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
                           PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4;
@@ -21,7 +22,7 @@ CREATE TABLE `ci_env` (
 -- Records of ci_env
 -- ----------------------------
 BEGIN;
-INSERT INTO `ci_env` (`id`, `name`, `image`, `secret_name`, `updated_at`) VALUES (1, 'Golang 1.19', 'registry.cn-shenzhen.aliyuncs.com/zze/devops-super-ci-client:tmp', '', '2023-10-13 16:30:00');
+INSERT INTO `ci_env` (`id`, `name`, `image`, `secret_name`, `persistence_config`, `updated_at`) VALUES (1, 'Golang 1.19', 'registry.cn-shenzhen.aliyuncs.com/zze/devops-super-ci-client:tmp', '', '[{\"pvcName\": \"devops-super-ci\", \"subPath\": \"golang\", \"mountPath\": \"/root/go\"}]', '2023-10-20 18:30:34');
 COMMIT;
 
 -- ----------------------------
@@ -33,17 +34,20 @@ CREATE TABLE `ci_pipeline` (
                                `name` varchar(64) NOT NULL COMMENT '名称',
                                `kubernetes_config_id` int(11) NOT NULL COMMENT '关联的 Kubernetes Config id',
                                `kubernetes_namespace` varchar(255) DEFAULT NULL COMMENT 'Pod 所在命名空间',
+                               `parameterize` bit(1) NOT NULL COMMENT '是否是参数化构建',
+                               `params` json DEFAULT NULL COMMENT '构建参数',
                                `config` json DEFAULT NULL COMMENT '配置',
                                `desc` varchar(256) DEFAULT NULL COMMENT '描述',
                                `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
                                PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4;
 
 -- ----------------------------
 -- Records of ci_pipeline
 -- ----------------------------
 BEGIN;
-INSERT INTO `ci_pipeline` (`id`, `name`, `kubernetes_config_id`, `kubernetes_namespace`, `config`, `desc`, `updated_at`) VALUES (1, 'test', 1, 'default', '[{\"id\": 1, \"stages\": [{\"name\": \"拉取代码\", \"tasks\": [{\"type\": 1, \"gitPullData\": {\"branch\": \"master\", \"gitUrl\": \"http://192.168.1.195:8990/scm/ops/devops-platform-fe.git\", \"secretId\": 2}, \"shellExecData\": {}}]}, {\"name\": \"编译\", \"tasks\": [{\"type\": 2, \"gitPullData\": {}, \"shellExecData\": {\"content\": \"echo go build -o app\\n\\nsleep 1\\necho 编译1\\nsleep 3\\necho 编译完成\\n\", \"workDir\": \"devops-platform-fe\"}}]}]}, {\"id\": 1, \"stages\": [{\"name\": \"中间阶段\", \"tasks\": [{\"type\": 2, \"gitPullData\": {}, \"shellExecData\": {\"content\": \"echo 执行中间阶段\\nsleep 1\\necho 编译1\\nsleep 3\\necho 中间阶段执行完成\\n\", \"workDir\": \"devops-platform-fe\"}}]}]}, {\"id\": 1, \"stages\": [{\"name\": \"上传镜像\", \"tasks\": [{\"type\": 2, \"gitPullData\": {}, \"shellExecData\": {\"content\": \"echo docker push\\nsleep 3\\nls\\npwd\\n\", \"workDir\": \"devops-platform-fe\"}}]}]}]', 'test', '2023-10-17 18:06:52');
+INSERT INTO `ci_pipeline` (`id`, `name`, `kubernetes_config_id`, `kubernetes_namespace`, `parameterize`, `params`, `config`, `desc`, `updated_at`) VALUES (1, 'test', 1, 'default', b'1', '[{\"name\": \"branch\", \"type\": 1, \"gitUrl\": \"http://gitlab.internal.azj/devops/devops-platform.git\", \"display\": \"分支\", \"secretId\": 3, \"gitPullData\": {}, \"shellExecData\": {}}]', '[{\"id\": 1, \"stages\": [{\"name\": \"拉取代码\", \"tasks\": [{\"type\": 1, \"gitPullData\": {\"branch\": \"{{ branch }}\", \"gitUrl\": \"http://gitlab.internal.azj/devops/devops-platform.git\", \"secretId\": 3}, \"shellExecData\": {}}]}, {\"name\": \"编译\", \"tasks\": [{\"type\": 2, \"gitPullData\": {}, \"shellExecData\": {\"content\": \"go env -w \'GOPROXY=https://goproxy.cn,direct\' && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o app\", \"workDir\": \"devops-platform/microservice/app/api\"}}]}]}]', 'test', '2023-10-27 13:37:57');
+INSERT INTO `ci_pipeline` (`id`, `name`, `kubernetes_config_id`, `kubernetes_namespace`, `parameterize`, `params`, `config`, `desc`, `updated_at`) VALUES (2, 'test2', 1, 'default', b'1', '[{\"name\": \"branch\", \"type\": 1, \"gitUrl\": \"http://gitlab.internal.azj/devops/devops-platform.git\", \"display\": \"分支\", \"secretId\": 3, \"gitPullData\": {}, \"shellExecData\": {}}]', '[{\"id\": 1, \"stages\": [{\"name\": \"拉取代码\", \"tasks\": [{\"type\": 1, \"gitPullData\": {\"branch\": \"{{ branch }}\", \"gitUrl\": \"http://gitlab.internal.azj/devops/devops-platform.git\", \"secretId\": 3}, \"shellExecData\": {}}]}, {\"name\": \"编译\", \"tasks\": [{\"type\": 2, \"gitPullData\": {}, \"shellExecData\": {\"content\": \"go env -w \'GOPROXY=https://goproxy.cn,direct\' && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o app\", \"workDir\": \"devops-platform/microservice/app/api\"}}]}]}]', 'test', '2023-10-27 15:03:54');
 COMMIT;
 
 -- ----------------------------
@@ -55,12 +59,12 @@ CREATE TABLE `ci_pipeline_run` (
                                    `pipeline_id` int(11) NOT NULL COMMENT '流水线 id',
                                    `pod_name` varchar(128) NOT NULL COMMENT 'Pod 名称',
                                    `namespace` varchar(128) NOT NULL COMMENT '名称空间',
-                                   `status` tinyint(4) NOT NULL COMMENT '状态:0-运行中,1:成功,2:失败',
+                                   `status` tinyint(4) NOT NULL COMMENT '状态:0-运行中,1:成功,2:失败,3:取消',
                                    `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
                                    `created_at` datetime NOT NULL COMMENT '创建时间',
                                    PRIMARY KEY (`id`),
                                    KEY `idx_status` (`status`)
-) ENGINE=InnoDB AUTO_INCREMENT=60 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=135 DEFAULT CHARSET=utf8mb4;
 
 -- ----------------------------
 -- Records of ci_pipeline_run
@@ -125,6 +129,81 @@ INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `st
 INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (57, 1, 'ci-test-1-20231018095707', 'default', 1, '2023-10-18 09:57:27', '2023-10-18 09:57:08');
 INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (58, 1, 'ci-test-1-20231018100203', 'default', 1, '2023-10-18 10:02:27', '2023-10-18 10:02:04');
 INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (59, 1, 'ci-test-1-20231018101716', 'default', 1, '2023-10-18 10:17:42', '2023-10-18 10:17:16');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (60, 1, 'ci-test-1-20231018112529', 'default', 2, '2023-10-18 11:25:36', '2023-10-18 11:25:29');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (61, 1, 'ci-test-1-20231018112707', 'default', 1, '2023-10-18 11:27:29', '2023-10-18 11:27:08');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (62, 1, 'ci-test-1-20231018113148', 'default', 1, '2023-10-18 11:32:08', '2023-10-18 11:31:49');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (63, 1, 'ci-test-1-20231018113226', 'default', 2, '2023-10-18 11:32:31', '2023-10-18 11:32:26');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (64, 1, 'ci-test-1-20231018113451', 'default', 2, '2023-10-18 11:34:56', '2023-10-18 11:34:51');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (65, 1, 'ci-test-1-20231018113500', 'default', 2, '2023-10-18 11:35:04', '2023-10-18 11:35:00');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (66, 1, 'ci-test-1-20231018113531', 'default', 2, '2023-10-18 11:35:37', '2023-10-18 11:35:32');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (67, 1, 'ci-test-1-20231018113608', 'default', 2, '2023-10-18 11:36:13', '2023-10-18 11:36:09');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (68, 1, 'ci-test-1-20231018113626', 'default', 2, '2023-10-18 11:36:30', '2023-10-18 11:36:26');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (69, 1, 'ci-test-1-20231018113644', 'default', 2, '2023-10-18 11:36:49', '2023-10-18 11:36:45');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (70, 1, 'ci-test-1-20231018113659', 'default', 2, '2023-10-18 11:37:04', '2023-10-18 11:36:59');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (71, 1, 'ci-test-1-20231018113754', 'default', 2, '2023-10-18 11:37:59', '2023-10-18 11:37:54');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (72, 1, 'ci-test-1-20231018113821', 'default', 2, '2023-10-18 11:38:26', '2023-10-18 11:38:22');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (73, 1, 'ci-test-1-20231018113855', 'default', 2, '2023-10-18 11:39:00', '2023-10-18 11:38:56');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (74, 1, 'ci-test-1-20231018113910', 'default', 2, '2023-10-18 11:39:15', '2023-10-18 11:39:11');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (75, 1, 'ci-test-1-20231018114015', 'default', 2, '2023-10-18 11:40:20', '2023-10-18 11:40:16');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (76, 1, 'ci-test-1-20231018114044', 'default', 2, '2023-10-18 11:40:49', '2023-10-18 11:40:45');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (77, 1, 'ci-test-1-20231018114255', 'default', 2, '2023-10-18 11:42:59', '2023-10-18 11:42:56');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (78, 1, 'ci-test-1-20231018114344', 'default', 1, '2023-10-18 11:44:05', '2023-10-18 11:43:45');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (79, 1, 'ci-test-1-20231018114415', 'default', 2, '2023-10-18 11:44:28', '2023-10-18 11:44:15');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (80, 1, 'ci-test-1-20231018114456', 'default', 2, '2023-10-18 11:45:08', '2023-10-18 11:44:56');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (81, 1, 'ci-test-1-20231018114611', 'default', 2, '2023-10-18 11:46:23', '2023-10-18 11:46:12');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (82, 1, 'ci-test-1-20231018114659', 'default', 2, '2023-10-18 11:47:13', '2023-10-18 11:47:00');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (83, 1, 'ci-test-1-20231018114854', 'default', 2, '2023-10-18 11:49:06', '2023-10-18 11:48:54');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (84, 1, 'ci-test-1-20231018115101', 'default', 2, '2023-10-18 11:51:14', '2023-10-18 11:51:02');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (85, 1, 'ci-test-1-20231018115238', 'default', 2, '2023-10-18 11:52:54', '2023-10-18 11:52:40');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (86, 1, 'ci-test-1-20231018115310', 'default', 1, '2023-10-18 11:53:39', '2023-10-18 11:53:10');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (87, 1, 'ci-test-1-20231018115505', 'default', 1, '2023-10-18 11:55:24', '2023-10-18 11:55:06');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (88, 1, 'ci-test-1-20231018150628', 'default', 2, '2023-10-18 15:06:35', '2023-10-18 15:06:29');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (89, 1, 'ci-test-1-20231018150902', 'default', 2, '2023-10-18 15:13:48', '2023-10-18 15:09:03');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (90, 1, 'ci-test-1-20231018151409', 'default', 2, '2023-10-18 15:18:48', '2023-10-18 15:14:09');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (91, 1, 'ci-test-1-20231018152016', 'default', 2, '2023-10-18 15:46:55', '2023-10-18 15:20:17');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (92, 1, 'ci-test-1-20231018154801', 'default', 2, '2023-10-18 16:15:20', '2023-10-18 15:48:02');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (93, 1, 'ci-test-1-20231018164345', 'default', 0, '2023-10-18 16:43:45', '2023-10-18 16:43:45');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (94, 1, 'ci-test-1-20231018164445', 'default', 1, '2023-10-18 16:47:12', '2023-10-18 16:44:45');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (95, 1, 'ci-test-1-20231018165322', 'default', 1, '2023-10-18 16:56:43', '2023-10-18 16:53:22');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (96, 1, 'ci-test-1-20231018165938', 'default', 1, '2023-10-18 17:02:49', '2023-10-18 16:59:39');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (97, 1, 'ci-test-1-20231018170400', 'default', 2, '2023-10-18 17:08:20', '2023-10-18 17:04:00');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (98, 1, 'ci-test-1-20231018170520', 'default', 2, '2023-10-18 17:05:47', '2023-10-18 17:05:21');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (99, 1, 'ci-test-1-20231018170702', 'default', 2, '2023-10-18 17:07:07', '2023-10-18 17:07:02');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (100, 1, 'ci-test-1-20231018170723', 'default', 1, '2023-10-18 17:07:29', '2023-10-18 17:07:24');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (101, 1, 'ci-test-1-20231018170802', 'default', 1, '2023-10-18 17:08:10', '2023-10-18 17:08:03');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (102, 1, 'ci-test-1-20231018170958', 'default', 1, '2023-10-18 17:10:05', '2023-10-18 17:09:59');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (103, 1, 'ci-test-1-20231018172817', 'default', 1, '2023-10-18 17:28:25', '2023-10-18 17:28:18');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (104, 1, 'ci-test-1-20231018172957', 'default', 1, '2023-10-18 17:30:04', '2023-10-18 17:29:57');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (105, 1, 'ci-test-1-20231018173041', 'default', 1, '2023-10-18 17:30:48', '2023-10-18 17:30:42');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (106, 1, 'ci-test-1-20231018173157', 'default', 2, '2023-10-18 17:32:03', '2023-10-18 17:31:57');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (107, 1, 'ci-test-1-20231018173215', 'default', 1, '2023-10-18 17:36:59', '2023-10-18 17:32:16');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (108, 1, 'ci-test-1-20231018174130', 'default', 1, '2023-10-18 17:48:06', '2023-10-18 17:41:31');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (109, 1, 'ci-test-1-20231018181249', 'default', 1, '2023-10-18 18:23:55', '2023-10-18 18:12:50');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (110, 1, 'ci-test-1-20231019163554', 'default', 1, '2023-10-19 16:42:34', '2023-10-19 16:35:54');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (111, 1, 'ci-test-1-20231020134146', 'default', 1, '2023-10-20 13:44:22', '2023-10-20 13:41:47');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (112, 1, 'ci-test-1-20231020174919', 'default', 3, '2023-10-26 10:46:14', '2023-10-20 17:49:20');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (113, 1, 'ci-test-1-20231020175422', 'default', 3, '2023-10-26 10:46:13', '2023-10-20 17:54:27');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (114, 1, 'ci-test-1-20231020175616', 'default', 1, '2023-10-20 18:04:41', '2023-10-20 17:56:25');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (115, 1, 'ci-test-1-20231020180151', 'default', 2, '2023-10-20 18:03:26', '2023-10-20 18:01:51');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (116, 1, 'ci-test-1-20231020180915', 'default', 2, '2023-10-20 18:09:22', '2023-10-20 18:09:15');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (117, 1, 'ci-test-1-20231020180941', 'default', 2, '2023-10-20 18:09:46', '2023-10-20 18:09:41');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (118, 1, 'ci-test-1-20231020181109', 'default', 2, '2023-10-20 18:11:15', '2023-10-20 18:11:10');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (119, 1, 'ci-test-1-20231020181304', 'default', 2, '2023-10-20 18:13:10', '2023-10-20 18:13:05');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (120, 1, 'ci-test-1-20231020181756', 'default', 3, '2023-10-26 10:42:15', '2023-10-20 18:17:57');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (121, 1, 'ci-test-1-20231026095035', 'default', 1, '2023-10-26 09:57:59', '2023-10-26 09:50:36');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (122, 1, 'ci-test-1-20231026104634', 'default', 2, '2023-10-26 10:46:45', '2023-10-26 10:46:35');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (123, 1, 'ci-test-1-20231026104956', 'default', 3, '2023-10-26 10:49:58', '2023-10-26 10:49:57');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (124, 1, 'ci-test-1-20231026181028', 'default', 1, '2023-10-26 18:18:01', '2023-10-26 18:10:28');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (125, 1, 'ci-test-1-20231027095222', 'default', 1, '2023-10-27 09:57:31', '2023-10-27 09:52:22');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (126, 1, 'ci-test-1-20231027110632', 'default', 3, '2023-10-27 11:07:10', '2023-10-27 11:06:33');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (127, 1, 'ci-test-1-20231027111748', 'default', 3, '2023-10-27 11:29:14', '2023-10-27 11:17:48');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (128, 1, 'ci-test-1-20231027112957', 'default', 3, '2023-10-27 11:31:29', '2023-10-27 11:29:58');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (129, 1, 'ci-test-1-20231027113135', 'default', 1, '2023-10-27 11:37:38', '2023-10-27 11:31:36');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (130, 1, 'ci-test-1-20231027114509', 'default', 2, '2023-10-27 11:49:39', '2023-10-27 11:45:10');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (131, 1, 'ci-test-1-20231027115018', 'default', 2, '2023-10-27 11:56:50', '2023-10-27 11:50:19');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (132, 1, 'ci-test-1-20231027115444', 'default', 1, '2023-10-27 12:01:56', '2023-10-27 11:54:44');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (133, 1, 'ci-test-1-20231027144002', 'default', 2, '2023-10-27 14:45:36', '2023-10-27 14:40:02');
+INSERT INTO `ci_pipeline_run` (`id`, `pipeline_id`, `pod_name`, `namespace`, `status`, `updated_at`, `created_at`) VALUES (134, 2, 'ci-test2-2-20231027150838', 'default', 0, '2023-10-27 15:08:39', '2023-10-27 15:08:39');
 COMMIT;
 
 -- ----------------------------
@@ -177,7 +256,7 @@ CREATE TABLE `host` (
 BEGIN;
 INSERT INTO `host` (`id`, `name`, `host_addr`, `port`, `username`, `password`, `private_key`, `use_key`, `desc`, `save_session`, `updated_at`, `host_group_id`) VALUES (1, '测试机', '127.0.0.1', 22, 'zze', '123456', '', b'0', 'test', b'0', '2023-10-18 10:24:59', NULL);
 INSERT INTO `host` (`id`, `name`, `host_addr`, `port`, `username`, `password`, `private_key`, `use_key`, `desc`, `save_session`, `updated_at`, `host_group_id`) VALUES (2, '测试机', '127.0.0.1', 22, 'zze', '123456', '', b'0', 'tesst', b'0', '2023-10-18 10:25:00', NULL);
-INSERT INTO `host` (`id`, `name`, `host_addr`, `port`, `username`, `password`, `private_key`, `use_key`, `desc`, `save_session`, `updated_at`, `host_group_id`) VALUES (4, 'test2', '192.168.2.238', 22, 'root', '123456', '', b'0', '', b'1', '2023-10-18 10:25:04', 0);
+INSERT INTO `host` (`id`, `name`, `host_addr`, `port`, `username`, `password`, `private_key`, `use_key`, `desc`, `save_session`, `updated_at`, `host_group_id`) VALUES (4, 'test2', '192.168.2.238', 22, 'root', '123456', '', b'0', '', b'1', '2023-10-18 14:02:37', 0);
 INSERT INTO `host` (`id`, `name`, `host_addr`, `port`, `username`, `password`, `private_key`, `use_key`, `desc`, `save_session`, `updated_at`, `host_group_id`) VALUES (7, '测试新增', '192.168.3.33', 22, 'root', '123123', '', b'0', 'ss', b'0', '2023-10-10 17:52:33', 9);
 COMMIT;
 
@@ -265,7 +344,7 @@ CREATE TABLE `permission` (
                               `keep_alive` bit(1) NOT NULL COMMENT '页面缓存',
                               `parent_id` int(11) NOT NULL COMMENT '父级权限 id',
                               PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=69 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=71 DEFAULT CHARSET=utf8mb4;
 
 -- ----------------------------
 -- Records of permission
@@ -331,9 +410,11 @@ INSERT INTO `permission` (`id`, `title`, `name`, `type`, `f_route`, `b_routes`, 
 INSERT INTO `permission` (`id`, `title`, `name`, `type`, `f_route`, `b_routes`, `redirect`, `icon`, `rank`, `show_link`, `show_parent`, `keep_alive`, `parent_id`) VALUES (63, '新增流水线', 'ci-pipeline-add', 3, '', '[\"post:/ci-pipeline\"]', '', '', 2, b'0', b'0', b'0', 50);
 INSERT INTO `permission` (`id`, `title`, `name`, `type`, `f_route`, `b_routes`, `redirect`, `icon`, `rank`, `show_link`, `show_parent`, `keep_alive`, `parent_id`) VALUES (64, '更新流水线', 'ci-pipeline-upt', 3, '', '[\"put:/ci-pipeline/:id\"]', '', '', 3, b'0', b'0', b'0', 50);
 INSERT INTO `permission` (`id`, `title`, `name`, `type`, `f_route`, `b_routes`, `redirect`, `icon`, `rank`, `show_link`, `show_parent`, `keep_alive`, `parent_id`) VALUES (65, '删除流水线', 'ci-pipeline-del', 3, '', '[\"delete:/ci-pipeline/:id\"]', '', '', 4, b'0', b'0', b'0', 50);
-INSERT INTO `permission` (`id`, `title`, `name`, `type`, `f_route`, `b_routes`, `redirect`, `icon`, `rank`, `show_link`, `show_parent`, `keep_alive`, `parent_id`) VALUES (66, '编排流水线', 'ci-pipeline-arrange', 3, '', '[\"get:/ci-pipeline/:id/config\", \"patch:/ci-pipeline/:id/config\", \"get:/secret/list\"]', '', '', 5, b'0', b'0', b'0', 50);
-INSERT INTO `permission` (`id`, `title`, `name`, `type`, `f_route`, `b_routes`, `redirect`, `icon`, `rank`, `show_link`, `show_parent`, `keep_alive`, `parent_id`) VALUES (67, '运行流水线', 'ci-pipeline-run', 3, '', '[\"post:/ci-pipeline/:id/run\"]', '', '', 6, b'0', b'0', b'0', 50);
-INSERT INTO `permission` (`id`, `title`, `name`, `type`, `f_route`, `b_routes`, `redirect`, `icon`, `rank`, `show_link`, `show_parent`, `keep_alive`, `parent_id`) VALUES (68, '查看流水线日志', 'ci-pipeline-run-log', 3, '', '[]', '', '', 7, b'0', b'0', b'0', 50);
+INSERT INTO `permission` (`id`, `title`, `name`, `type`, `f_route`, `b_routes`, `redirect`, `icon`, `rank`, `show_link`, `show_parent`, `keep_alive`, `parent_id`) VALUES (66, '编排流水线', 'ci-pipeline-arrange', 3, '', '[\"get:/ci-pipeline/:id/config\", \"patch:/ci-pipeline/:id/config\", \"get:/secret/list\", \"get:/common/git-branch-list\"]', '', '', 5, b'0', b'0', b'0', 50);
+INSERT INTO `permission` (`id`, `title`, `name`, `type`, `f_route`, `b_routes`, `redirect`, `icon`, `rank`, `show_link`, `show_parent`, `keep_alive`, `parent_id`) VALUES (67, '运行流水线', 'ci-pipeline-run', 3, '', '[\"post:/ci-pipeline/:id/run\", \"get:/common/git-branch-list\"]', '', '', 6, b'0', b'0', b'0', 50);
+INSERT INTO `permission` (`id`, `title`, `name`, `type`, `f_route`, `b_routes`, `redirect`, `icon`, `rank`, `show_link`, `show_parent`, `keep_alive`, `parent_id`) VALUES (68, '查看流水线日志', 'ci-pipeline-run-log', 3, '', '[\"get:/ci-pipeline-run/:id/log\"]', '', '', 8, b'0', b'0', b'0', 50);
+INSERT INTO `permission` (`id`, `title`, `name`, `type`, `f_route`, `b_routes`, `redirect`, `icon`, `rank`, `show_link`, `show_parent`, `keep_alive`, `parent_id`) VALUES (69, '取消流水线运行', 'ci-pipeline-run-cancel', 3, '', '[\"delete:/ci-pipeline-run/:id/cancel\"]', '', '', 9, b'0', b'0', b'0', 50);
+INSERT INTO `permission` (`id`, `title`, `name`, `type`, `f_route`, `b_routes`, `redirect`, `icon`, `rank`, `show_link`, `show_parent`, `keep_alive`, `parent_id`) VALUES (70, '克隆流水线', 'ci-pipeline-clone', 3, '', '[\"post:/ci-pipeline/:id/clone\"]', '', '', 7, b'0', b'0', b'0', 50);
 COMMIT;
 
 -- ----------------------------
@@ -368,14 +449,15 @@ CREATE TABLE `secret` (
                           `content` json NOT NULL COMMENT '认证配置内容',
                           `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
                           PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4;
 
 -- ----------------------------
 -- Records of secret
 -- ----------------------------
 BEGIN;
-INSERT INTO `secret` (`id`, `name`, `type`, `content`, `updated_at`) VALUES (1, '线下集群', 2, '{\"text\": \"apiVersion: v1\\nclusters:\\n- cluster:\\n    certificate-authority-data: xxx\\n    server: https://192.168.2.2:7443\\n  name: azj-cluster\\ncontexts:\\n- context:\\n    cluster: azj-cluster\\n    namespace: devops\\n    user: admin\\n  name: offline-cluster\\ncurrent-context: offline-cluster\\nkind: Config\\npreferences: {}\\nusers:\\n- name: admin\\n  user:\\n    client-certificate-data:=\\n    client-key-data:=\"}', '2023-10-18 10:26:42');
-INSERT INTO `secret` (`id`, `name`, `type`, `content`, `updated_at`) VALUES (2, '线下 BitBucket', 1, '{\"password\": \"123456\", \"username\": \"zhangzhongen\"}', '2023-10-18 10:25:29');
+INSERT INTO `secret` (`id`, `name`, `type`, `content`, `updated_at`) VALUES (1, '线下集群', 2, '{\"text\": \"apiVersion: v1\\nclusters:\\n- cluster:\\n    certificate-authority-data: x\\n    server: https://192.168.2.2:7443\\n  name: azj-cluster\\ncontexts:\\n- context:\\n    cluster: azj-cluster\\n    namespace: default\\n    user: admin\\n  name: offline-cluster\\ncurrent-context: offline-cluster\\nkind: Config\\npreferences: {}\\nusers:\\n- name: admin\\n  user:\\n    client-certificate-data: x=\\n    client-key-data: x=\"}', '2023-10-20 14:16:45');
+INSERT INTO `secret` (`id`, `name`, `type`, `content`, `updated_at`) VALUES (2, '线下 BitBucket', 1, '{\"password\": \"xxx\", \"username\": \"zhangzhongen1\"}', '2023-10-27 11:41:44');
+INSERT INTO `secret` (`id`, `name`, `type`, `content`, `updated_at`) VALUES (3, '线下 Gitlab', 1, '{\"password\": \"f/FofvWYwI/x+/1eZXHAWto=\", \"username\": \"root\"}', '2023-10-26 18:08:25');
 COMMIT;
 
 -- ----------------------------
