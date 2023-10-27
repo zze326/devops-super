@@ -51,8 +51,8 @@
 ## 技术栈
 
 - 语言：Golang、Typescript；
-- 后端：GoFrame、Casbin；
-- 前端：Vue3、Vite、Element-Plus、TypeScript、Pinia 等；
+- 后端：Go Frame、Casbin、Pongo2、Kubernetes Client-GO、Go-Git；
+- 前端：Vue3、Vite、Element-Plus、TypeScript、Pinia、Xterm 等；
 
 ## 项目运行
 
@@ -95,6 +95,8 @@ docker run -d --name devops-super \
         --network host registry.cn-shenzhen.aliyuncs.com/zze/devops-super:202310271518
 ```
 
+> 容器的 `/app/host-sessions` 目录保存了主机终端会话记录信息，可以将它挂载出来以持久化保存。
+> 
 > 环境变量说明：
 > - `DB_HOST`：MySQL 主机地址；
 > - `DB_PORT`：MySQL 端口；
