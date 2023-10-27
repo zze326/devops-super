@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/casbin/casbin/v2 v2.77.2
+	github.com/flosch/pongo2/v6 v6.0.0
 	github.com/go-git/go-git/v5 v5.9.0
 	github.com/gogf/gf-jwt/v2 v2.1.0
 	github.com/gogf/gf/contrib/drivers/mysql/v2 v2.5.4

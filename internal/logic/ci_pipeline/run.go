@@ -24,25 +24,39 @@ import (
 	"time"
 )
 
-func (s *sCiPipeline) Run(ctx context.Context, id int) (err error) {
+func (s *sCiPipeline) Run(ctx context.Context, id int, params *gjson.Json) (err error) {
 	var (
-		ePipeline        *entity.CiPipeline
-		arrangeConfig    mid.CiPipelineConfig // 编排配置
-		kubeConfigSecret *entity.Secret
-		kubeConfig       *mid.TextContent
-		kubeClient       *kubernetes.Client
-		kubeNamespace    = consts.CI_CLIENT_POD_NAMESPACE
-		envMap           map[int]*entity.CiEnv
-		now              = gtime.Now()
+		ePipeline         *entity.CiPipeline
+		arrangeConfigJson *gjson.Json
+		arrangeConfig     mid.CiPipelineConfig // 编排配置
+		kubeConfigSecret  *entity.Secret
+		kubeConfig        *mid.TextContent
+		kubeClient        *kubernetes.Client
+		kubeNamespace     = consts.CI_CLIENT_POD_NAMESPACE
+		envMap            map[int]*entity.CiEnv
+		now               = gtime.Now()
 	)
 	// 获取 Pipeline 信息
 	ePipeline, err = s.Get(ctx, &do.CiPipeline{Id: id})
 	if err != nil {
 		return
 	}
+	arrangeConfigJson = ePipeline.Config
+
+	if ePipeline.Parameterize {
+		if params.IsNil() {
+			return gerror.New("参数化流水线未提交参数")
+		}
+
+		arrangeConfigJsonStr, err := util.Pongo2Parse(ePipeline.Config.String(), params)
+		if err != nil {
+			return err
+		}
+		arrangeConfigJson = gjson.New(arrangeConfigJsonStr)
+	}
 
 	// 解析 Pipeline 编排配置到结构体对象
-	if err = ePipeline.Config.Scan(&arrangeConfig); err != nil {
+	if err = arrangeConfigJson.Scan(&arrangeConfig); err != nil {
 		return
 	}
 

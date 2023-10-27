@@ -6,6 +6,7 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
+	"github.com/logrusorgru/aurora"
 	"log"
 	"os"
 	"path"
@@ -13,6 +14,8 @@ import (
 )
 
 func GitClone(data *mid.GitPullData) error {
+	fmt.Println(aurora.Blue(fmt.Sprintf("Git 地址: %s", data.GitUrl)))
+	fmt.Println(aurora.Blue(fmt.Sprintf("分支: %s", data.Branch)))
 	baseName := filepath.Base(data.GitUrl)
 	extension := filepath.Ext(baseName)
 

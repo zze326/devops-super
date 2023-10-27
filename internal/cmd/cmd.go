@@ -5,6 +5,7 @@ import (
 	"devops-super/internal/controller/ci_env"
 	"devops-super/internal/controller/ci_pipeline"
 	"devops-super/internal/controller/ci_pipeline_run"
+	"devops-super/internal/controller/common"
 	"devops-super/internal/controller/dept"
 	"devops-super/internal/controller/host"
 	"devops-super/internal/controller/host_group"
@@ -56,6 +57,7 @@ var (
 						ci_pipeline_run.NewV1(), // ci 流水线运行记录
 						// 其它
 						kubernetes.NewV1(), // Kubernetes 相关
+						common.NewV1(),     // 公共、通用接口
 					)
 				})
 			})

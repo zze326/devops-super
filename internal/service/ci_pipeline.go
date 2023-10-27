@@ -10,6 +10,8 @@ import (
 	"devops-super/api"
 	"devops-super/internal/model/do"
 	"devops-super/internal/model/entity"
+
+	"github.com/gogf/gf/v2/encoding/gjson"
 )
 
 type (
@@ -20,7 +22,7 @@ type (
 		GetLst(ctx context.Context) (out []*entity.CiPipeline, err error)
 		Get(ctx context.Context, in *do.CiPipeline) (out *entity.CiPipeline, err error)
 		Del(ctx context.Context, in *do.CiPipeline) (err error)
-		Run(ctx context.Context, id int) (err error)
+		Run(ctx context.Context, id int, params *gjson.Json) (err error)
 	}
 )
 

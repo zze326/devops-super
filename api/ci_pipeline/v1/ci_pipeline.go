@@ -69,8 +69,8 @@ type GetConfigRes struct {
 
 type RunReq struct {
 	g.Meta `method:"post" path:"/ci-pipeline/{id}/run" summary:"运行流水线" tags:"CI 流水线"`
-	Id     int ` v:"min:1#id必须" path:"id"`
+	Id     int         `v:"min:1#id必须" path:"id"`
+	Params *gjson.Json `json:"params"`
 }
 
-type RunRes struct {
-}
+type RunRes struct{}

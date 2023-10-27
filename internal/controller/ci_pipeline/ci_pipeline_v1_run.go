@@ -7,6 +7,6 @@ import (
 )
 
 func (c *ControllerV1) Run(ctx context.Context, req *v1.RunReq) (res *v1.RunRes, err error) {
-	err = service.CiPipeline().Run(ctx, req.Id)
+	err = service.CiPipeline().Run(ctx, req.Id, req.Params)
 	return
 }
