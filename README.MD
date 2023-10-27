@@ -51,7 +51,7 @@
 ## 技术栈
 
 - 语言：Golang、Typescript；
-- 后端：Go Frame、Casbin、Pongo2、Kubernetes Client-GO、Go-Git；
+- 后端：Go Frame、Casbin、Pongo2、Kubernetes Client Go、Go Git；
 - 前端：Vue3、Vite、Element-Plus、TypeScript、Pinia、Xterm 等；
 
 ## 项目运行
