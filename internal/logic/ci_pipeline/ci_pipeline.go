@@ -31,7 +31,7 @@ func (*sCiPipeline) Add(ctx context.Context, in *entity.CiPipeline) (err error) 
 	if r != nil {
 		return gerror.New("已存在该名称的流水线")
 	}
-	_, err = dao.CiPipeline.Ctx(ctx).Insert(in)
+	_, err = dao.CiPipeline.Ctx(ctx).FieldsEx(cols.Id).Insert(in)
 	return
 }
 
@@ -74,4 +74,14 @@ func (*sCiPipeline) Get(ctx context.Context, in *do.CiPipeline) (out *entity.CiP
 func (*sCiPipeline) Del(ctx context.Context, in *do.CiPipeline) (err error) {
 	_, err = dao.CiPipeline.Ctx(ctx).Where(in).OmitNilWhere().Delete()
 	return
+}
+
+func (s *sCiPipeline) Clone(ctx context.Context, id int, newName string) error {
+	e, err := s.Get(ctx, &do.CiPipeline{Id: id})
+	if err != nil {
+		return err
+	}
+
+	e.Name = newName
+	return s.Add(ctx, e)
 }

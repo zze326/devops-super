@@ -74,3 +74,11 @@ type RunReq struct {
 }
 
 type RunRes struct{}
+
+type CloneReq struct {
+	g.Meta  `method:"post" path:"/ci-pipeline/{id}/clone" summary:"克隆流水线" tags:"CI 流水线"`
+	Id      int    `v:"min:1#id必须" path:"id"`
+	NewName string `v:"required" json:"newName"`
+}
+
+type CloneRes struct{}

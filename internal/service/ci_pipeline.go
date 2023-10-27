@@ -22,6 +22,7 @@ type (
 		GetLst(ctx context.Context) (out []*entity.CiPipeline, err error)
 		Get(ctx context.Context, in *do.CiPipeline) (out *entity.CiPipeline, err error)
 		Del(ctx context.Context, in *do.CiPipeline) (err error)
+		Clone(ctx context.Context, id int, newName string) error
 		Run(ctx context.Context, id int, params *gjson.Json) (err error)
 	}
 )

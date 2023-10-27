@@ -19,4 +19,5 @@ type ICiPipelineV1 interface {
 	GetLst(ctx context.Context, req *v1.GetLstReq) (res *v1.GetLstRes, err error)
 	GetConfig(ctx context.Context, req *v1.GetConfigReq) (res *v1.GetConfigRes, err error)
 	Run(ctx context.Context, req *v1.RunReq) (res *v1.RunRes, err error)
+	Clone(ctx context.Context, req *v1.CloneReq) (res *v1.CloneRes, err error)
 }
