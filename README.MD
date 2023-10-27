@@ -76,9 +76,12 @@ mysql
 
 1、在 MySQL 中执行 `manifest/db/devops_super.sql` 创建好数据库以及初始化数据；
 
-2、从 [releases](https://github.com/zze326/devops-super/releases) 获取到要部署的镜像版本，以 [v1.0](https://github.com/zze326/devops-super/releases/tag/v1.0) 为例：主程序 Docker 镜像为 `registry.cn-shenzhen.aliyuncs.com/zze/devops-super:202310271518`；
+2、从 [releases](https://github.com/zze326/devops-super/releases)
+获取到要部署的镜像版本，以 [v1.0](https://github.com/zze326/devops-super/releases/tag/v1.0) 为例：主程序 Docker
+镜像为 `registry.cn-shenzhen.aliyuncs.com/zze/devops-super:202310271518`；
 
 3、运行容器，看如下实例：
+
 ```bash
 docker run -d --name devops-super \
         -v/opt/devops-super/host-sessions:/app/host-sessions \
@@ -91,6 +94,7 @@ docker run -d --name devops-super \
         -eJWT_SECRET=vIIEngfamdsaGZasdsasdasadkseadgF9fe \
         --network host registry.cn-shenzhen.aliyuncs.com/zze/devops-super:202310271518
 ```
+
 > 环境变量说明：
 > - `DB_HOST`：MySQL 主机地址；
 > - `DB_PORT`：MySQL 端口；
@@ -99,8 +103,10 @@ docker run -d --name devops-super \
 > - `DB_PWD`：连接数据库的用户密码；
 > - `JWT_SECRET`：JWT 秘钥，随机生成即可；
 > - `SERVER_PORT`：服务监听端口；
-> 
+>
 > 参数说明（按需使用）：
 > - `-d`：后台运行容器；
 > - `--name`：指定容器名称；
 > - `--network host`：容器共用宿主机网络空间；
+
+4、容器运行成功后浏览器访问 8001 端口即可；
