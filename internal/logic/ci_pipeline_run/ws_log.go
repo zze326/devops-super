@@ -92,7 +92,7 @@ WATCH:
 						}
 					}
 				}
-				// 如果发现所有容器的日志已经输出完，则终端输出
+				// 如果发现所有容器的日志已经输出完，则中断输出
 				if logIndex > len(allContainerStatus)-1 {
 					break WATCH
 				}
