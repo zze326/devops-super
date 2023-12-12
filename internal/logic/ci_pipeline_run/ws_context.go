@@ -54,7 +54,7 @@ func (wsCtx *wsContext) tailLog(status corev1.ContainerStatus) error {
 			return err
 		}
 	}
-	if isKaniko && status.State.Terminated != nil && status.State.Terminated.ExitCode == 0 {
+	if isKaniko && ((status.State.Terminated != nil && status.State.Terminated.ExitCode == 0) || status.State.Running != nil) {
 		if err := wsCtx.ws.WriteMessage(ghttp.WsMsgText, []byte(aurora.Green("=====【Kaniko 构建上传镜像】结束=====").String())); err != nil {
 			return err
 		}
