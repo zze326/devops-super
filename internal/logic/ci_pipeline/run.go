@@ -311,14 +311,20 @@ func createCiPod(kubeClient *kubernetes.Client, namespace, name string, arrangeC
 	}
 
 	for idx, envItem := range arrangeConfig {
+		mountPath := consts.CI_CLIENT_POD_WORKSPACE_PATH
+		containerName := fmt.Sprintf("env-%d", idx)
+		if envItem.IsKaniko {
+			mountPath = consts.CI_CLIENT_POD_KANIKO_WORKSPACE_PATH
+			containerName = fmt.Sprintf("%s-kaniko", containerName)
+		}
 		container := corev1.Container{
-			Name:            fmt.Sprintf("env-%d", idx),
+			Name:            containerName,
 			Image:           envItem.Image,
 			ImagePullPolicy: corev1.PullAlways,
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      consts.CI_CLIENT_POD_WORKSPACE_VOLUME_NAME,
-					MountPath: consts.CI_CLIENT_POD_WORKSPACE_PATH,
+					MountPath: mountPath,
 				},
 			},
 		}
