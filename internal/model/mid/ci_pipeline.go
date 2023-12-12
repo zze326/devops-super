@@ -23,6 +23,8 @@ type CiPipelineConfigItem struct {
 	Id         int                             `json:"id" yaml:"id"`
 	Image      string                          `json:"image" yaml:"image"`
 	SecretName string                          `json:"secretName" yaml:"secretName"`
+	IsKaniko   bool                            `json:"isKaniko" yaml:"isKaniko"`
+	Params     string                          `json:"params" yaml:"params"`
 	Stages     []*CiPipelineConfigEnvStageItem `json:"stages" yaml:"stages"`
 }
 

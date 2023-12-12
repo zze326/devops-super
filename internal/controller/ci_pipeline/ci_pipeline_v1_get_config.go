@@ -2,12 +2,12 @@ package ci_pipeline
 
 import (
 	"context"
+	"devops-super/api/ci_pipeline/v1"
 	"devops-super/internal/model/do"
 	"devops-super/internal/model/entity"
 	"devops-super/internal/model/mid"
 	"devops-super/internal/service"
-
-	"devops-super/api/ci_pipeline/v1"
+	"github.com/gogf/gf/v2/frame/g"
 )
 
 func (c *ControllerV1) GetConfig(ctx context.Context, req *v1.GetConfigReq) (res *v1.GetConfigRes, err error) {
@@ -17,7 +17,6 @@ func (c *ControllerV1) GetConfig(ctx context.Context, req *v1.GetConfigReq) (res
 		entityMap map[int]*entity.CiEnv
 	)
 	res = new(v1.GetConfigRes)
-	res.EnvMap = make(map[int]string, 0)
 	ePipeline, err = service.CiPipeline().Get(ctx, &do.CiPipeline{Id: req.Id})
 	if err != nil {
 		return
@@ -30,7 +29,7 @@ func (c *ControllerV1) GetConfig(ctx context.Context, req *v1.GetConfigReq) (res
 
 	entityMap, err = service.CiEnv().GetEntityMap(ctx, config.GetEnvIds())
 	for id, e := range entityMap {
-		res.EnvMap[id] = e.Name
+		res.EnvMap.Set(id, g.Map{"name": e.Name, "isKaniko": e.IsKaniko})
 	}
 
 	return

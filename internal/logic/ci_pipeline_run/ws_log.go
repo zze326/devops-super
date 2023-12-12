@@ -101,9 +101,9 @@ WATCH:
 			podInfo = event.Object.(*corev1.Pod)
 			// 如果 Pod 运行失败了，直接输出当前容器的日志然后中断
 			if podInfo.Status.Phase == corev1.PodFailed {
-				if err := wsCtx.tailLog(logIndex); err != nil {
-					return err
-				}
+				//if err := wsCtx.tailLog(logIndex); err != nil {
+				//	return err
+				//}
 				break WATCH
 			}
 			for _, status := range append(podInfo.Status.InitContainerStatuses, podInfo.Status.ContainerStatuses...) {
@@ -117,7 +117,7 @@ WATCH:
 					}
 
 					// 最后一个容器日志获取完毕才终止监听
-					if logIndex == len(podInfo.Status.InitContainerStatuses)+len(podInfo.Status.ContainerStatuses)-1 {
+					if logIndex == len(podInfo.Status.InitContainerStatuses)+len(podInfo.Status.ContainerStatuses)-1 && podInfo.Status.Phase != corev1.PodRunning {
 						break WATCH
 					}
 					logIndex++

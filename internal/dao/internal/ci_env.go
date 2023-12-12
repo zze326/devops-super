@@ -25,6 +25,7 @@ type CiEnvColumns struct {
 	Image             string // 镜像
 	SecretName        string // Kubernetes Secret 名称，拉取镜像使用
 	PersistenceConfig string // 持久化配置
+	IsKaniko          string // 是否是 kaniko 客户端
 	UpdatedAt         string // 更新时间
 }
 
@@ -35,6 +36,7 @@ var ciEnvColumns = CiEnvColumns{
 	Image:             "image",
 	SecretName:        "secret_name",
 	PersistenceConfig: "persistence_config",
+	IsKaniko:          "is_kaniko",
 	UpdatedAt:         "updated_at",
 }
 

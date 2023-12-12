@@ -77,7 +77,7 @@ func (*sCiEnv) GetEntityMap(ctx context.Context, ids []int) (out map[int]*entity
 		return
 	}
 	var es []*entity.CiEnv
-	if err = dao.CiEnv.Ctx(ctx).WhereIn(cols.Id, ids).Limit(1).Scan(&es); err != nil {
+	if err = dao.CiEnv.Ctx(ctx).WhereIn(cols.Id, ids).Scan(&es); err != nil {
 		return
 	}
 

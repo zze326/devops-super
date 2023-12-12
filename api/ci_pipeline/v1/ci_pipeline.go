@@ -4,6 +4,7 @@ import (
 	"devops-super/api"
 	"devops-super/internal/model/entity"
 	"devops-super/internal/model/mid"
+	"github.com/gogf/gf/v2/container/gmap"
 	"github.com/gogf/gf/v2/encoding/gjson"
 	"github.com/gogf/gf/v2/frame/g"
 )
@@ -64,7 +65,7 @@ type GetConfigReq struct {
 
 type GetConfigRes struct {
 	Config *gjson.Json    `json:"config"`
-	EnvMap map[int]string `json:"envMap"`
+	EnvMap gmap.IntAnyMap `json:"envMap"`
 }
 
 type RunReq struct {

@@ -12,6 +12,7 @@ import (
 	"devops-super/utility/thirdclients/kubernetes"
 	"devops-super/utility/util"
 	"fmt"
+	"github.com/gogf/gf/v2/container/gset"
 	"github.com/gogf/gf/v2/encoding/gjson"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
@@ -21,6 +22,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
+	"strings"
 	"time"
 )
 
@@ -69,6 +71,7 @@ func (s *sCiPipeline) Run(ctx context.Context, id int, params *gjson.Json) (err 
 	for _, envItem := range arrangeConfig {
 		envItem.Image = envMap[envItem.Id].Image
 		envItem.SecretName = envMap[envItem.Id].SecretName
+		envItem.IsKaniko = envMap[envItem.Id].IsKaniko
 
 		for _, stageItem := range envItem.Stages {
 			for _, taskItem := range stageItem.Tasks {
@@ -292,9 +295,11 @@ WATCH:
 // 创建 ci pod
 func createCiPod(kubeClient *kubernetes.Client, namespace, name string, arrangeConfig mid.CiPipelineConfig, envMap map[int]*entity.CiEnv) error {
 	var (
-		containers     []corev1.Container
-		initContainers []corev1.Container
-		volumes        []corev1.Volume
+		containers           []corev1.Container
+		initContainers       []corev1.Container
+		volumes              []corev1.Volume
+		imagePullSecretNames = gset.New()
+		imagePullSecrets     []corev1.LocalObjectReference
 	)
 
 	var createEnvs = func(envs map[string]string) []corev1.EnvVar {
@@ -306,16 +311,9 @@ func createCiPod(kubeClient *kubernetes.Client, namespace, name string, arrangeC
 	}
 
 	for idx, envItem := range arrangeConfig {
-		stagesJson, err := gjson.EncodeString(envItem.Stages)
-		if err != nil {
-			return err
-		}
 		container := corev1.Container{
-			Name:  fmt.Sprintf("env-%d", idx),
-			Image: arrangeConfig[0].Image,
-			Env: createEnvs(map[string]string{
-				consts.CI_CLIENT_POD_CONTAINER_STAGES_ENV_NAME: stagesJson,
-			}),
+			Name:            fmt.Sprintf("env-%d", idx),
+			Image:           envItem.Image,
 			ImagePullPolicy: corev1.PullAlways,
 			VolumeMounts: []corev1.VolumeMount{
 				{
@@ -323,6 +321,17 @@ func createCiPod(kubeClient *kubernetes.Client, namespace, name string, arrangeC
 					MountPath: consts.CI_CLIENT_POD_WORKSPACE_PATH,
 				},
 			},
+		}
+		if envItem.IsKaniko {
+			container.Args = strings.Split(envItem.Params, " ")
+		} else {
+			stagesJson, err := gjson.EncodeString(envItem.Stages)
+			if err != nil {
+				return err
+			}
+			container.Env = createEnvs(map[string]string{
+				consts.CI_CLIENT_POD_CONTAINER_STAGES_ENV_NAME: stagesJson,
+			})
 		}
 
 		// 判断该环境启用了持久化
@@ -369,6 +378,13 @@ func createCiPod(kubeClient *kubernetes.Client, namespace, name string, arrangeC
 			}
 		}
 
+		if !gutil.IsEmpty(envItem.SecretName) {
+			imagePullSecretNames.Add(envItem.SecretName)
+		}
+	}
+
+	for _, imageSecretName := range imagePullSecretNames.Slice() {
+		imagePullSecrets = append(imagePullSecrets, corev1.LocalObjectReference{Name: imageSecretName.(string)})
 	}
 
 	pod := &corev1.Pod{
@@ -377,8 +393,9 @@ func createCiPod(kubeClient *kubernetes.Client, namespace, name string, arrangeC
 			Namespace: namespace,
 		},
 		Spec: corev1.PodSpec{
-			InitContainers: initContainers,
-			Containers:     containers,
+			ImagePullSecrets: imagePullSecrets,
+			InitContainers:   initContainers,
+			Containers:       containers,
 			Volumes: append(volumes, corev1.Volume{
 				Name: consts.CI_CLIENT_POD_WORKSPACE_VOLUME_NAME,
 				VolumeSource: corev1.VolumeSource{

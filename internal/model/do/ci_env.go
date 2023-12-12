@@ -18,5 +18,6 @@ type CiEnv struct {
 	Image             interface{} // 镜像
 	SecretName        interface{} // Kubernetes Secret 名称，拉取镜像使用
 	PersistenceConfig *gjson.Json // 持久化配置
+	IsKaniko          interface{} // 是否是 kaniko 客户端
 	UpdatedAt         *gtime.Time // 更新时间
 }
