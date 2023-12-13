@@ -22,7 +22,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
-	"strings"
 	"time"
 )
 
@@ -329,7 +328,10 @@ func createCiPod(kubeClient *kubernetes.Client, namespace, name string, arrangeC
 			},
 		}
 		if envItem.IsKaniko {
-			container.Args = strings.Split(envItem.Params, " ")
+			// --dockerfile=/workspace/devops-platform/microservice/app/api/Dockerfile1 --context=dir://devops-platform/microservice/app/api/ --destination=registry-zze-registry.cn-shanghai.cr.aliyuncs.com/ops/devops-platform/app-api:tmp
+			container.Args = append(container.Args, fmt.Sprintf("--dockerfile=/workspace/%s", envItem.KanikoParam.DockerfilePath))
+			container.Args = append(container.Args, fmt.Sprintf("--context=dir://%s", envItem.KanikoParam.ContextDir))
+			container.Args = append(container.Args, fmt.Sprintf("--destination=%s", envItem.KanikoParam.ImageDestination))
 		} else {
 			stagesJson, err := gjson.EncodeString(envItem.Stages)
 			if err != nil {

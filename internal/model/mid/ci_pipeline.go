@@ -20,18 +20,25 @@ func (c CiPipelineConfig) GetEnvIds() []int {
 }
 
 type CiPipelineConfigItem struct {
-	Id         int                             `json:"id" yaml:"id"`
-	Image      string                          `json:"image" yaml:"image"`
-	SecretName string                          `json:"secretName" yaml:"secretName"`
-	IsKaniko   bool                            `json:"isKaniko" yaml:"isKaniko"`
-	Params     string                          `json:"params" yaml:"params"`
-	Stages     []*CiPipelineConfigEnvStageItem `json:"stages" yaml:"stages"`
+	Id          int                             `json:"id" yaml:"id"`
+	Image       string                          `json:"image" yaml:"image"`
+	SecretName  string                          `json:"secretName" yaml:"secretName"`
+	IsKaniko    bool                            `json:"isKaniko" yaml:"isKaniko"`
+	KanikoParam *KanikoParam                    `json:"kanikoParam" yaml:"kanikoParam"`
+	Stages      []*CiPipelineConfigEnvStageItem `json:"stages" yaml:"stages"`
 }
 
 type CiPipelineConfigEnvStageItem struct {
 	Name  string                              `json:"name" yaml:"name"`
 	Tasks []*CiPipelineConfigEnvStageTaskItem `json:"tasks" yaml:"tasks"`
 }
+
+type KanikoParam struct {
+	ContextDir       string `json:"contextDir"`
+	DockerfilePath   string `json:"dockerfilePath"`
+	ImageDestination string `json:"imageDestination"`
+}
+
 type CiPipelineConfigEnvStageTaskItem struct {
 	Type          int            `json:"type" yaml:"type"`
 	GitPullData   *GitPullData   `json:"gitPullData,omitempty"`
