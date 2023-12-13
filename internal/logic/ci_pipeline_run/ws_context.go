@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"devops-super/utility/thirdclients/kubernetes"
+	"fmt"
 	"github.com/gogf/gf/v2/net/ghttp"
 	"github.com/gogf/gf/v2/os/gtime"
 	"github.com/logrusorgru/aurora"
@@ -30,10 +31,16 @@ func (wsCtx *wsContext) writeErr(err error) {
 
 // 获取 Pod 日志
 func (wsCtx *wsContext) tailLog(status corev1.ContainerStatus) error {
-	containerName := status.Name
-	isKaniko := strings.Contains(containerName, "kaniko")
+	var (
+		containerName = status.Name
+		isKaniko      = strings.Contains(containerName, "kaniko")
+		msg           = "Kaniko 构建上传镜像"
+	)
 	if isKaniko {
-		if err := wsCtx.ws.WriteMessage(ghttp.WsMsgText, []byte(aurora.Green("=====【Kaniko 构建上传镜像】开始=====").String())); err != nil {
+		if strings.Contains(containerName, "warmer") {
+			msg = "更新基础镜像缓存"
+		}
+		if err := wsCtx.ws.WriteMessage(ghttp.WsMsgText, []byte(aurora.Green(fmt.Sprintf("=====【%s】开始=====", msg)).String())); err != nil {
 			return err
 		}
 	}
@@ -55,7 +62,7 @@ func (wsCtx *wsContext) tailLog(status corev1.ContainerStatus) error {
 		}
 	}
 	if isKaniko && ((status.State.Terminated != nil && status.State.Terminated.ExitCode == 0) || status.State.Running != nil) {
-		if err := wsCtx.ws.WriteMessage(ghttp.WsMsgText, []byte(aurora.Green("=====【Kaniko 构建上传镜像】结束=====").String())); err != nil {
+		if err := wsCtx.ws.WriteMessage(ghttp.WsMsgText, []byte(aurora.Green(fmt.Sprintf("=====【%s】结束=====", msg)).String())); err != nil {
 			return err
 		}
 	}

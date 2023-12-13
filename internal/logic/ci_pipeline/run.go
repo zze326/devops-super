@@ -294,11 +294,14 @@ WATCH:
 // 创建 ci pod
 func createCiPod(kubeClient *kubernetes.Client, namespace, name string, arrangeConfig mid.CiPipelineConfig, envMap map[int]*entity.CiEnv) error {
 	var (
-		containers           []corev1.Container
-		initContainers       []corev1.Container
-		volumes              []corev1.Volume
-		imagePullSecretNames = gset.New()
-		imagePullSecrets     []corev1.LocalObjectReference
+		containers             []corev1.Container
+		initContainers         []corev1.Container
+		volumes                []corev1.Volume
+		imagePullSecretNames   = gset.New()
+		imagePullSecrets       []corev1.LocalObjectReference
+		hasKaniko              bool
+		dockerfilePathsToCache []string
+		kanikoVolumeMounts     []corev1.VolumeMount
 	)
 
 	var createEnvs = func(envs map[string]string) []corev1.EnvVar {
@@ -313,6 +316,7 @@ func createCiPod(kubeClient *kubernetes.Client, namespace, name string, arrangeC
 		mountPath := consts.CI_CLIENT_POD_WORKSPACE_PATH
 		containerName := fmt.Sprintf("env-%d", idx)
 		if envItem.IsKaniko {
+			hasKaniko = true
 			mountPath = consts.CI_CLIENT_POD_KANIKO_WORKSPACE_PATH
 			containerName = fmt.Sprintf("%s-kaniko", containerName)
 		}
@@ -328,10 +332,19 @@ func createCiPod(kubeClient *kubernetes.Client, namespace, name string, arrangeC
 			},
 		}
 		if envItem.IsKaniko {
+			container.Image = consts.CI_CLIENT_POD_KANIKO_EXECUTOR_IMAGE
+			//container.Args = append(container.Args, "--verbosity=debug")
+			container.Args = append(container.Args, "--cache=true")
+			//container.Args = append(container.Args, "--cache-run-layers")
+			//container.Args = append(container.Args, "--cache-copy-layers")
+			container.Args = append(container.Args, "--cache-dir=/cache")
+			container.Args = append(container.Args, "--skip-tls-verify")
+			container.Args = append(container.Args, "--skip-tls-verify-pull")
 			// --dockerfile=/workspace/devops-platform/microservice/app/api/Dockerfile1 --context=dir://devops-platform/microservice/app/api/ --destination=registry-zze-registry.cn-shanghai.cr.aliyuncs.com/ops/devops-platform/app-api:tmp
 			container.Args = append(container.Args, fmt.Sprintf("--dockerfile=/workspace/%s", envItem.KanikoParam.DockerfilePath))
 			container.Args = append(container.Args, fmt.Sprintf("--context=dir://%s", envItem.KanikoParam.ContextDir))
 			container.Args = append(container.Args, fmt.Sprintf("--destination=%s", envItem.KanikoParam.ImageDestination))
+			dockerfilePathsToCache = append(dockerfilePathsToCache, envItem.KanikoParam.DockerfilePath)
 		} else {
 			stagesJson, err := gjson.EncodeString(envItem.Stages)
 			if err != nil {
@@ -375,15 +388,44 @@ func createCiPod(kubeClient *kubernetes.Client, namespace, name string, arrangeC
 				SubPath:   item.SubPath,
 			})
 		}
+		if envItem.IsKaniko {
+			kanikoVolumeMounts = container.VolumeMounts
+		}
 
 		if len(arrangeConfig) == 1 { // 如果只有一个环境容器，则设置该容器到 containers
-			containers = append(containers, container)
+			if hasKaniko {
+				initContainers = append(initContainers, container)
+			} else {
+				containers = append(containers, container)
+			}
 		} else { // 如果有多个环境容器，则最后一个容器设置到 containers，其它容器设置到 initContainers
 			if idx != (len(arrangeConfig) - 1) { // 如果不是最后一个容器
 				initContainers = append(initContainers, container)
 			} else { // 是最后一个容器
-				containers = append(containers, container)
+				if hasKaniko {
+					initContainers = append(initContainers, container)
+				} else {
+					containers = append(containers, container)
+				}
 			}
+		}
+
+		// 如果存在 kaniko 环境，缓存构建使用的镜像
+		if hasKaniko {
+			cacheContainer := corev1.Container{
+				Name:            fmt.Sprintf("env-%d-kaniko-warmer", len(arrangeConfig)),
+				Image:           consts.CI_CLIENT_POD_KANIKO_WARMER_IMAGE,
+				ImagePullPolicy: corev1.PullIfNotPresent,
+				VolumeMounts:    kanikoVolumeMounts,
+			}
+			cacheContainer.Args = append(cacheContainer.Args, "--cache-dir=/cache")
+			cacheContainer.Args = append(cacheContainer.Args, "--skip-tls-verify-pull")
+			cacheContainer.Args = append(cacheContainer.Args, "--force")
+			//cacheContainer.Args = append(cacheContainer.Args, fmt.Sprintf("--image=%s", "registry-azj-registry.cn-shanghai.cr.aliyuncs.com/ops/alpine-for-dp:v1.2"))
+			for _, dockerfilePath := range dockerfilePathsToCache {
+				cacheContainer.Args = append(cacheContainer.Args, fmt.Sprintf("--dockerfile=%s", dockerfilePath))
+			}
+			containers = append(containers, cacheContainer)
 		}
 
 		if !gutil.IsEmpty(envItem.SecretName) {
