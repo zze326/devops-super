@@ -341,10 +341,12 @@ func createCiPod(kubeClient *kubernetes.Client, namespace, name string, arrangeC
 			container.Args = append(container.Args, "--skip-tls-verify")
 			container.Args = append(container.Args, "--skip-tls-verify-pull")
 			// --dockerfile=/workspace/devops-platform/microservice/app/api/Dockerfile1 --context=dir://devops-platform/microservice/app/api/ --destination=registry-zze-registry.cn-shanghai.cr.aliyuncs.com/ops/devops-platform/app-api:tmp
-			container.Args = append(container.Args, fmt.Sprintf("--dockerfile=/workspace/%s", envItem.KanikoParam.DockerfilePath))
+			container.Args = append(container.Args, fmt.Sprintf("--dockerfile=%s", envItem.KanikoParam.DockerfilePath))
 			container.Args = append(container.Args, fmt.Sprintf("--context=dir://%s", envItem.KanikoParam.ContextDir))
 			container.Args = append(container.Args, fmt.Sprintf("--destination=%s", envItem.KanikoParam.ImageDestination))
-			dockerfilePathsToCache = append(dockerfilePathsToCache, envItem.KanikoParam.DockerfilePath)
+			if envItem.KanikoParam.UpdateBaseImageCache {
+				dockerfilePathsToCache = append(dockerfilePathsToCache, envItem.KanikoParam.DockerfilePath)
+			}
 		} else {
 			stagesJson, err := gjson.EncodeString(envItem.Stages)
 			if err != nil {
@@ -392,26 +394,20 @@ func createCiPod(kubeClient *kubernetes.Client, namespace, name string, arrangeC
 			kanikoVolumeMounts = container.VolumeMounts
 		}
 
-		if len(arrangeConfig) == 1 { // 如果只有一个环境容器，则设置该容器到 containers
-			if hasKaniko {
+		updateBaseImageCache := hasKaniko && len(dockerfilePathsToCache) > 0
+
+		if len(arrangeConfig) == 1 || idx == (len(arrangeConfig)-1) { // 如果只有一个环境容器 或 是最后一个容器
+			if updateBaseImageCache { // 如果要更新基础镜像缓存，则最后一个容器肯定是 kaniko warm 容器
 				initContainers = append(initContainers, container)
 			} else {
 				containers = append(containers, container)
 			}
-		} else { // 如果有多个环境容器，则最后一个容器设置到 containers，其它容器设置到 initContainers
-			if idx != (len(arrangeConfig) - 1) { // 如果不是最后一个容器
-				initContainers = append(initContainers, container)
-			} else { // 是最后一个容器
-				if hasKaniko {
-					initContainers = append(initContainers, container)
-				} else {
-					containers = append(containers, container)
-				}
-			}
+		} else {
+			initContainers = append(initContainers, container)
 		}
 
 		// 如果存在 kaniko 环境，缓存构建使用的镜像
-		if hasKaniko {
+		if updateBaseImageCache {
 			cacheContainer := corev1.Container{
 				Name:            fmt.Sprintf("env-%d-kaniko-warmer", len(arrangeConfig)),
 				Image:           consts.CI_CLIENT_POD_KANIKO_WARMER_IMAGE,

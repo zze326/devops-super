@@ -34,9 +34,10 @@ type CiPipelineConfigEnvStageItem struct {
 }
 
 type KanikoParam struct {
-	ContextDir       string `json:"contextDir"`
-	DockerfilePath   string `json:"dockerfilePath"`
-	ImageDestination string `json:"imageDestination"`
+	ContextDir           string `json:"contextDir"`
+	DockerfilePath       string `json:"dockerfilePath"`
+	ImageDestination     string `json:"imageDestination"`
+	UpdateBaseImageCache bool   `json:"updateBaseImageCache"`
 }
 
 type CiPipelineConfigEnvStageTaskItem struct {
