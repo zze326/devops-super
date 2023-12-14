@@ -16,3 +16,8 @@ type UsernamePasswordContent struct {
 type TextContent struct {
 	Text string `json:"text"`
 }
+
+type DockerRegistryAuthContent struct {
+	RegistryUrl string `json:"registryUrl"`
+	UsernamePasswordContent
+}

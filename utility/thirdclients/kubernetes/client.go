@@ -35,7 +35,7 @@ func NewClient(ctx context.Context, config string) (*Client, error) {
 	}, nil
 }
 
-func IsPodNotFoundError(err error) bool {
+func IsNotFoundError(err error) bool {
 	if statusErr, ok := err.(*errors.StatusError); ok {
 		if statusErr.ErrStatus.Reason == metav1.StatusReasonNotFound {
 			return true

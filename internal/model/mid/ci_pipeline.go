@@ -38,6 +38,7 @@ type KanikoParam struct {
 	DockerfilePath       string `json:"dockerfilePath"`
 	ImageDestination     string `json:"imageDestination"`
 	UpdateBaseImageCache bool   `json:"updateBaseImageCache"`
+	SecretId             int    `json:"secretId"`
 }
 
 type CiPipelineConfigEnvStageTaskItem struct {

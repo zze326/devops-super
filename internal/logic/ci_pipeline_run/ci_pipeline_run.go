@@ -81,7 +81,7 @@ func (s *sCiPipelineRun) Cancel(ctx context.Context, id int) error {
 		return err
 	}
 
-	if err := kubeClient.DeletePodForce(ctx, e.Namespace, e.PodName); err != nil && !kubernetes.IsPodNotFoundError(err) {
+	if err := kubeClient.DeletePodForce(ctx, e.Namespace, e.PodName); err != nil && !kubernetes.IsNotFoundError(err) {
 		return err
 	}
 

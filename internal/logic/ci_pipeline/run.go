@@ -11,6 +11,7 @@ import (
 	"devops-super/internal/service"
 	"devops-super/utility/thirdclients/kubernetes"
 	"devops-super/utility/util"
+	"encoding/base64"
 	"fmt"
 	"github.com/gogf/gf/v2/container/gset"
 	"github.com/gogf/gf/v2/encoding/gjson"
@@ -22,6 +23,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
+	"path/filepath"
 	"time"
 )
 
@@ -164,11 +166,6 @@ func watchCiPod(ctx context.Context, kubeClient *kubernetes.Client, namespace, n
 	}
 	defer watcher.Stop()
 
-	//var (
-	//	watchIndex = 0
-	//	logIndex   = 0
-	//	maxIndex   = len(ciConfig) - 1
-	//)
 WATCH:
 	for event := range watcher.ResultChan() {
 		switch event.Type {
@@ -199,64 +196,6 @@ WATCH:
 				}
 				break WATCH
 			}
-			//glog.Printf(ctx, "Pod '%s' modified in namespace '%s'", pod.Name, pod.Namespace)
-			//if watchIndex != maxIndex {
-			//	for _, status := range pod.Status.InitContainerStatuses {
-			//		if containerName := fmt.Sprintf("env-%d", watchIndex); status.Name == containerName {
-			//			if status.Ready {
-			//				glog.Debugf(ctx, "%s 已完成\n", containerName)
-			//				watchIndex++
-			//			} else {
-			//				if status.State.Running != nil {
-			//					glog.Debugf(ctx, "%s 开始运行了\n", containerName)
-			//				}
-			//				if status.State.Terminated != nil && status.State.Terminated.ExitCode != 0 {
-			//					glog.Debugf(ctx, "%s 执行失败\n", containerName)
-			//				}
-			//			}
-			//		}
-			//
-			//		if containerName := fmt.Sprintf("env-%d", logIndex); status.Name == containerName {
-			//			if status.Ready {
-			//				tailLog(ctx, kubeClient, namespace, name, logIndex, false) // 打印所有日志
-			//				logIndex++
-			//			} else {
-			//				if status.State.Running != nil {
-			//					tailLog(ctx, kubeClient, namespace, name, logIndex, true) // 跟踪打印日志
-			//					logIndex++
-			//				}
-			//			}
-			//		}
-			//	}
-			//} else {
-			//	for _, status := range pod.Status.ContainerStatuses {
-			//		if containerName := fmt.Sprintf("env-%d", watchIndex); status.Name == containerName {
-			//			if terminalState := status.State.Terminated; terminalState != nil {
-			//				if terminalState.ExitCode == 0 && terminalState.Reason == "Completed" {
-			//					glog.Debugf(ctx, "%s 已完成\n", containerName)
-			//				} else if terminalState.ExitCode > 0 {
-			//					glog.Debugf(ctx, "%s 执行失败\n", containerName)
-			//				}
-			//			} else {
-			//				if status.State.Running != nil {
-			//					glog.Debugf(ctx, "%s 开始运行了\n", containerName)
-			//				}
-			//			}
-			//		}
-			//
-			//		if containerName := fmt.Sprintf("env-%d", logIndex); status.Name == containerName {
-			//			if terminalState := status.State.Terminated; terminalState != nil {
-			//				tailLog(ctx, kubeClient, namespace, name, logIndex, false) // 打印所有日志
-			//				logIndex++
-			//			} else {
-			//				if status.State.Running != nil {
-			//					tailLog(ctx, kubeClient, namespace, name, logIndex, true) // 跟踪打印日志
-			//					logIndex++
-			//				}
-			//			}
-			//		}
-			//	}
-			//}
 		case watch.Error:
 			//err := event.Object.(error)
 			glog.Errorf(ctx, "Received watch error: %v", event.Object)
@@ -265,43 +204,18 @@ WATCH:
 	}
 }
 
-// 获取 Pod 日志
-//func tailLog(ctx context.Context, kubeClient *kubernetes.Client, namespace, podName string, logIndex int, follow bool) {
-//	line := int64(100000)
-//req := kubeClient.CoreV1().Pods(namespace).GetLogs(podName, &corev1.PodLogOptions{
-//	Container: fmt.Sprintf("env-%d", logIndex),
-//	Follow:    follow,
-//	TailLines: &line,
-//})
-//stream, err := req.Stream(ctx)
-//if err != nil {
-//	glog.Error(ctx, err)
-//	return
-//}
-//
-//if _, err = io.Copy(os.Stdout, stream); err != nil {
-//	glog.Error(ctx, err)
-//	return
-//}
-
-//defer stream.Close()
-//scanner := bufio.NewScanner(stream)
-//for scanner.Scan() {
-//	fmt.Println(scanner.Text())
-//}
-//}
-
 // 创建 ci pod
 func createCiPod(kubeClient *kubernetes.Client, namespace, name string, arrangeConfig mid.CiPipelineConfig, envMap map[int]*entity.CiEnv) error {
 	var (
-		containers             []corev1.Container
-		initContainers         []corev1.Container
-		volumes                []corev1.Volume
-		imagePullSecretNames   = gset.New()
-		imagePullSecrets       []corev1.LocalObjectReference
-		hasKaniko              bool
-		dockerfilePathsToCache []string
-		kanikoVolumeMounts     []corev1.VolumeMount
+		containers              []corev1.Container
+		initContainers          []corev1.Container
+		volumes                 []corev1.Volume
+		imagePullSecretNames    = gset.New()
+		dockerRegistrySecretIds = gset.New()
+		imagePullSecrets        []corev1.LocalObjectReference
+		hasKaniko               bool
+		dockerfilePathsToCache  []string
+		kanikoVolumeMounts      []corev1.VolumeMount
 	)
 
 	var createEnvs = func(envs map[string]string) []corev1.EnvVar {
@@ -319,6 +233,7 @@ func createCiPod(kubeClient *kubernetes.Client, namespace, name string, arrangeC
 			hasKaniko = true
 			mountPath = consts.CI_CLIENT_POD_KANIKO_WORKSPACE_PATH
 			containerName = fmt.Sprintf("%s-kaniko", containerName)
+			dockerRegistrySecretIds.Add(envItem.KanikoParam.SecretId)
 		}
 		container := corev1.Container{
 			Name:            containerName,
@@ -333,20 +248,23 @@ func createCiPod(kubeClient *kubernetes.Client, namespace, name string, arrangeC
 		}
 		if envItem.IsKaniko {
 			container.Image = consts.CI_CLIENT_POD_KANIKO_EXECUTOR_IMAGE
-			//container.Args = append(container.Args, "--verbosity=debug")
 			container.Args = append(container.Args, "--cache=true")
-			//container.Args = append(container.Args, "--cache-run-layers")
-			//container.Args = append(container.Args, "--cache-copy-layers")
+			container.Args = append(container.Args, fmt.Sprintf("--kaniko-dir=%s", consts.CI_CLIENT_POD_KANIKO_DIR))
 			container.Args = append(container.Args, "--cache-dir=/cache")
 			container.Args = append(container.Args, "--skip-tls-verify")
 			container.Args = append(container.Args, "--skip-tls-verify-pull")
-			// --dockerfile=/workspace/devops-platform/microservice/app/api/Dockerfile1 --context=dir://devops-platform/microservice/app/api/ --destination=registry-zze-registry.cn-shanghai.cr.aliyuncs.com/ops/devops-platform/app-api:tmp
-			container.Args = append(container.Args, fmt.Sprintf("--dockerfile=%s", envItem.KanikoParam.DockerfilePath))
 			container.Args = append(container.Args, fmt.Sprintf("--context=dir://%s", envItem.KanikoParam.ContextDir))
 			container.Args = append(container.Args, fmt.Sprintf("--destination=%s", envItem.KanikoParam.ImageDestination))
 			if envItem.KanikoParam.UpdateBaseImageCache {
 				dockerfilePathsToCache = append(dockerfilePathsToCache, envItem.KanikoParam.DockerfilePath)
 			}
+
+			container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
+				Name:      consts.CI_CLIENT_CONFIG_MAP_NAME,
+				ReadOnly:  true,
+				MountPath: filepath.Join(consts.CI_CLIENT_POD_KANIKO_DIR, "/.docker/config.json"),
+				SubPath:   fmt.Sprintf("%s-%d", consts.CI_CLIENT_CONFIG_MAP_SECRET_KEY_PREFIX, envItem.KanikoParam.SecretId),
+			})
 		} else {
 			stagesJson, err := gjson.EncodeString(envItem.Stages)
 			if err != nil {
@@ -433,6 +351,77 @@ func createCiPod(kubeClient *kubernetes.Client, namespace, name string, arrangeC
 		imagePullSecrets = append(imagePullSecrets, corev1.LocalObjectReference{Name: imageSecretName.(string)})
 	}
 
+	if hasKaniko { // 如果存在 kaniko 环境，检查 kaniko 环境配置的镜像仓库认证秘钥内容和 kubernetes 集群中 ConfigMap 中的配置是否一致
+		configMap, err := kubeClient.GetConfigMap(namespace, consts.CI_CLIENT_CONFIG_MAP_NAME)
+		if err != nil && !kubernetes.IsNotFoundError(err) {
+			return err
+		}
+
+		var (
+			noConfigMap           = kubernetes.IsNotFoundError(err)
+			configDataMap         = make(map[string]string)
+			shouldUpdateConfigMap = false
+		)
+
+		for _, secretId := range dockerRegistrySecretIds.Slice() {
+			eSecret, err := service.Secret().Get(kubeClient.Ctx, &do.Secret{Id: secretId.(int)})
+			if err != nil {
+				return err
+			}
+
+			if eSecret.Type != consts.SECRET_TYPE_DOCKER_REGISTRY_AUTH {
+				return gerror.New("秘钥类型不匹配")
+			}
+			dockerRegistryAuthContent := new(mid.DockerRegistryAuthContent)
+			if err := eSecret.Content.Scan(dockerRegistryAuthContent); err != nil {
+				return err
+			}
+
+			authConfigJson, err := gjson.MarshalIndent(g.Map{
+				"auths": g.Map{
+					dockerRegistryAuthContent.RegistryUrl: g.Map{
+						"auth": base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", dockerRegistryAuthContent.Username, dockerRegistryAuthContent.Password))),
+					},
+				},
+			}, "", "  ")
+			if err != nil {
+				return err
+			}
+
+			itemKey := fmt.Sprintf("%s-%d", consts.CI_CLIENT_CONFIG_MAP_SECRET_KEY_PREFIX, secretId)
+			configDataMap[fmt.Sprintf(itemKey)] = string(authConfigJson)
+			if !noConfigMap { // 存在 config map
+				if content, ok := configMap.Data[itemKey]; !ok || content != string(authConfigJson) {
+					shouldUpdateConfigMap = true
+					configMap.Data[itemKey] = string(authConfigJson)
+				}
+			}
+		}
+
+		if noConfigMap {
+			if err := kubeClient.CreateConfigMap(namespace, consts.CI_CLIENT_CONFIG_MAP_NAME, configDataMap); err != nil {
+				return err
+			}
+		} else {
+			if shouldUpdateConfigMap {
+				if err := kubeClient.UpdateConfigMap(namespace, configMap); err != nil {
+					return err
+				}
+			}
+		}
+
+		volumes = append(volumes, corev1.Volume{
+			Name: consts.CI_CLIENT_CONFIG_MAP_NAME,
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: consts.CI_CLIENT_CONFIG_MAP_NAME,
+					},
+				},
+			},
+		})
+	}
+
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -459,7 +448,7 @@ func createCiPod(kubeClient *kubernetes.Client, namespace, name string, arrangeC
 	}
 
 	for _, volume := range volumes {
-		if !util.InSlice(pvcs, volume.Name) {
+		if volume.VolumeSource.PersistentVolumeClaim != nil && !util.InSlice(pvcs, volume.Name) {
 			return gerror.Newf("集群的 %s 命名空间下不存在名为 %s 的 PVC", namespace, volume.Name)
 		}
 	}
