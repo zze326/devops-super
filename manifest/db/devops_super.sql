@@ -14,17 +14,18 @@ CREATE TABLE `ci_env` (
                           `image` varchar(256) NOT NULL COMMENT '镜像',
                           `secret_name` varchar(128) DEFAULT NULL COMMENT 'Kubernetes Secret 名称，拉取镜像使用',
                           `persistence_config` json DEFAULT NULL COMMENT '持久化配置',
+                          `is_kaniko` bit(1) NOT NULL COMMENT '是否是 kaniko 客户端',
                           `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
                           PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4;
 
 -- ----------------------------
 -- Records of ci_env
 -- ----------------------------
 BEGIN;
-INSERT INTO `ci_env` (`id`, `name`, `image`, `secret_name`, `persistence_config`, `updated_at`) VALUES (1, 'Golang 1.19', 'registry.cn-shenzhen.aliyuncs.com/zze/devops-super-ci-client:tmp', '', '[{\"pvcName\": \"devops-super-ci\", \"subPath\": \"golang\", \"mountPath\": \"/root/go\"}]', '2023-10-20 18:30:34');
+INSERT INTO `ci_env` (`id`, `name`, `image`, `secret_name`, `persistence_config`, `is_kaniko`, `updated_at`) VALUES (1, 'Golang 1.19', 'registry.cn-shenzhen.aliyuncs.com/zze/devops-super-ci-client:202312121641', '', '[{\"pvcName\": \"devops-super-ci\", \"subPath\": \"golang\", \"mountPath\": \"/root/go\"}]', b'0', '2023-12-12 16:43:24');
+INSERT INTO `ci_env` (`id`, `name`, `image`, `secret_name`, `persistence_config`, `is_kaniko`, `updated_at`) VALUES (2, 'Kaniko', 'registry.cn-shenzhen.aliyuncs.com/zze/gcriokaniko-executor:v1.19.0', '', '[{\"pvcName\": \"devops-super-ci\", \"subPath\": \"kaniko-cache\", \"mountPath\": \"/cache\"}]', b'1', '2023-12-14 16:52:07');
 COMMIT;
-
 -- ----------------------------
 -- Table structure for ci_pipeline
 -- ----------------------------
