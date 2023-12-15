@@ -233,6 +233,7 @@ func createCiPod(kubeClient *kubernetes.Client, namespace, name string, arrangeC
 		hasKaniko               bool
 		dockerfilePathsToCache  []string
 		kanikoVolumeMounts      []corev1.VolumeMount
+		imageDestination        string
 	)
 
 	var createEnvs = func(envs map[string]string) []corev1.EnvVar {
@@ -246,7 +247,7 @@ func createCiPod(kubeClient *kubernetes.Client, namespace, name string, arrangeC
 	for idx, envItem := range arrangeConfig {
 		mountPath := consts.CI_CLIENT_POD_WORKSPACE_PATH
 		containerName := fmt.Sprintf("env-%d", idx)
-		if envItem.IsKaniko {
+		if envItem.IsKaniko { // 只能存在一个 kaniko 环境
 			hasKaniko = true
 			mountPath = consts.CI_CLIENT_POD_KANIKO_WORKSPACE_PATH
 			containerName = fmt.Sprintf("%s-kaniko", containerName)
@@ -272,6 +273,7 @@ func createCiPod(kubeClient *kubernetes.Client, namespace, name string, arrangeC
 			container.Args = append(container.Args, "--skip-tls-verify-pull")
 			container.Args = append(container.Args, fmt.Sprintf("--context=dir://%s", envItem.KanikoParam.ContextDir))
 			container.Args = append(container.Args, fmt.Sprintf("--destination=%s", envItem.KanikoParam.ImageDestination))
+			imageDestination = envItem.KanikoParam.ImageDestination
 			if envItem.KanikoParam.UpdateBaseImageCache {
 				dockerfilePathsToCache = append(dockerfilePathsToCache, envItem.KanikoParam.DockerfilePath)
 			}
@@ -330,6 +332,13 @@ func createCiPod(kubeClient *kubernetes.Client, namespace, name string, arrangeC
 		}
 
 		updateBaseImageCache := hasKaniko && len(dockerfilePathsToCache) > 0
+
+		if !gutil.IsEmpty(imageDestination) {
+			container.Env = append(container.Env, corev1.EnvVar{
+				Name:  consts.CI_CLIENT_POD_KANIKO_IMAGE_DESTINATION_ENV_NAME,
+				Value: imageDestination,
+			})
+		}
 
 		if len(arrangeConfig) == 1 || idx == (len(arrangeConfig)-1) { // 如果只有一个环境容器 或 是最后一个容器
 			if updateBaseImageCache { // 如果要更新基础镜像缓存，则最后一个容器肯定是 kaniko warm 容器
