@@ -51,7 +51,24 @@ func (s *sCiPipeline) Run(ctx context.Context, id int, params *gjson.Json) (err 
 			return gerror.New("参数化流水线未提交参数")
 		}
 
-		arrangeConfigJsonStr, err := util.Pongo2Parse(ePipeline.Config.String(), params)
+		now := gtime.Now()
+
+		env := g.Map{
+			"params": params.Map(),
+			"now": g.Map{
+				"year":        now.Year(),
+				"month":       now.Month(),
+				"day":         now.Day(),
+				"hour":        now.Hour(),
+				"minute":      now.Minute(),
+				"second":      now.Second(),
+				"millisecond": now.Millisecond(),
+				"string1":     now.String(),
+				"string2":     now.Layout("20060102150405"),
+			},
+		}
+
+		arrangeConfigJsonStr, err := util.Pongo2Parse(ePipeline.Config.String(), env)
 		if err != nil {
 			return err
 		}
