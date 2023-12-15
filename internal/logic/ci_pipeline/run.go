@@ -369,17 +369,7 @@ func createCiPod(kubeClient *kubernetes.Client, namespace, name string, arrangeC
 	}
 
 	if hasKaniko { // 如果存在 kaniko 环境，检查 kaniko 环境配置的镜像仓库认证秘钥内容和 kubernetes 集群中 ConfigMap 中的配置是否一致
-		configMap, err := kubeClient.GetConfigMap(namespace, consts.CI_CLIENT_CONFIG_MAP_NAME)
-		if err != nil && !kubernetes.IsNotFoundError(err) {
-			return err
-		}
-
-		var (
-			noConfigMap           = kubernetes.IsNotFoundError(err)
-			configDataMap         = make(map[string]string)
-			shouldUpdateConfigMap = false
-		)
-
+		configDataMap := make(map[string]string)
 		for _, secretId := range dockerRegistrySecretIds.Slice() {
 			eSecret, err := service.Secret().Get(kubeClient.Ctx, &do.Secret{Id: secretId.(int)})
 			if err != nil {
@@ -407,24 +397,10 @@ func createCiPod(kubeClient *kubernetes.Client, namespace, name string, arrangeC
 
 			itemKey := fmt.Sprintf("%s-%d", consts.CI_CLIENT_CONFIG_MAP_SECRET_KEY_PREFIX, secretId)
 			configDataMap[fmt.Sprintf(itemKey)] = string(authConfigJson)
-			if !noConfigMap { // 存在 config map
-				if content, ok := configMap.Data[itemKey]; !ok || content != string(authConfigJson) {
-					shouldUpdateConfigMap = true
-					configMap.Data[itemKey] = string(authConfigJson)
-				}
-			}
 		}
 
-		if noConfigMap {
-			if err := kubeClient.CreateConfigMap(namespace, consts.CI_CLIENT_CONFIG_MAP_NAME, configDataMap); err != nil {
-				return err
-			}
-		} else {
-			if shouldUpdateConfigMap {
-				if err := kubeClient.UpdateConfigMap(namespace, configMap); err != nil {
-					return err
-				}
-			}
+		if err := kubeClient.PresentConfigMapData(namespace, consts.CI_CLIENT_CONFIG_MAP_NAME, configDataMap); err != nil {
+			return err
 		}
 
 		volumes = append(volumes, corev1.Volume{

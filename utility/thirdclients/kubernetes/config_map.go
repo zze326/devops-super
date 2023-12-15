@@ -16,8 +16,7 @@ func (cli *Client) GetConfigMap(namespace, name string) (*corev1.ConfigMap, erro
 func (cli *Client) CreateConfigMap(namespace, name string, data map[string]string) error {
 	configMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
+			Name: name,
 		},
 		Data: data,
 	}
@@ -32,6 +31,34 @@ func (cli *Client) UpdateConfigMap(namespace string, configMap *corev1.ConfigMap
 	_, err := cli.CoreV1().ConfigMaps(namespace).Update(cli.Ctx, configMap, metav1.UpdateOptions{})
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+// PresentConfigMapData 确保配置文件存在
+func (cli *Client) PresentConfigMapData(namespace, name string, items map[string]string) error {
+	configMap, err := cli.GetConfigMap(namespace, name)
+	if err != nil && !IsNotFoundError(err) {
+		return err
+	}
+	var noConfigMap = IsNotFoundError(err)
+	if noConfigMap {
+		if err := cli.CreateConfigMap(namespace, name, items); err != nil {
+			return err
+		}
+	} else {
+		shouldUpdateConfigMap := false
+		for itemKey, itemContent := range items {
+			if content, ok := configMap.Data[itemKey]; !ok || content != itemContent {
+				shouldUpdateConfigMap = true
+				configMap.Data[itemKey] = itemContent
+			}
+		}
+		if shouldUpdateConfigMap {
+			if err := cli.UpdateConfigMap(namespace, configMap); err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }
