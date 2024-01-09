@@ -77,8 +77,8 @@ mysql
 1、在 MySQL 中执行 `manifest/db/devops_super.sql` 创建好数据库以及初始化数据；
 
 2、从 [releases](https://github.com/zze326/devops-super/releases)
-获取到要部署的镜像版本，以 [v1.0](https://github.com/zze326/devops-super/releases/tag/v1.0) 为例：主程序 Docker
-镜像为 `registry.cn-shenzhen.aliyuncs.com/zze/devops-super:202310271518`；
+获取到要部署的镜像版本，以 [v1.1](https://github.com/zze326/devops-super/releases/tag/v1.1) 为例：主程序 Docker
+镜像为 `registry.cn-shenzhen.aliyuncs.com/zze/devops-super:202312151703`；
 
 3、运行容器，看如下实例：
 
@@ -92,7 +92,7 @@ docker run -d --name devops-super \
         -eDB_USER=zze \
         -eDB_PWD=zze.admin \
         -eJWT_SECRET=vIIEngfamdsaGZasdsasdasadkseadgF9fe \
-        --network host registry.cn-shenzhen.aliyuncs.com/zze/devops-super:202310271518
+        --network host registry.cn-shenzhen.aliyuncs.com/zze/devops-super:202312151703
 ```
 
 > 容器的 `/app/host-sessions` 目录保存了主机终端会话记录信息，可以将它挂载出来以持久化保存。
